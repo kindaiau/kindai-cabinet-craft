@@ -80,7 +80,11 @@ export default function Landing() {
             <a
               key={item.href}
               href={item.href}
-              className="font-display text-sm font-semibold tracking-wide hover:opacity-80 transition-opacity"
+              onClick={(e) => {
+                e.preventDefault();
+                document.querySelector(item.href)?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="font-display text-sm font-semibold tracking-wide hover:opacity-80 transition-opacity cursor-pointer"
             >
               {rainbowText(item.label)}
             </a>
