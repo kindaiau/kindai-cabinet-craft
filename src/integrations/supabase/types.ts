@@ -180,7 +180,16 @@ export type Database = {
           business_name: string | null
           created_at: string
           default_waste_factor: number | null
+          fab_hourly_rate: number
+          fab_hours_per_unit: Json
+          fab_per_lm: number
+          fab_per_unit: Json
           id: string
+          install_hourly_rate: number
+          install_hours_per_unit: Json
+          install_per_lm: number
+          install_per_unit: Json
+          labour_method: string
           location: string | null
           trade_type: string | null
           updated_at: string
@@ -190,7 +199,16 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           default_waste_factor?: number | null
+          fab_hourly_rate?: number
+          fab_hours_per_unit?: Json
+          fab_per_lm?: number
+          fab_per_unit?: Json
           id?: string
+          install_hourly_rate?: number
+          install_hours_per_unit?: Json
+          install_per_lm?: number
+          install_per_unit?: Json
+          labour_method?: string
           location?: string | null
           trade_type?: string | null
           updated_at?: string
@@ -200,7 +218,16 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           default_waste_factor?: number | null
+          fab_hourly_rate?: number
+          fab_hours_per_unit?: Json
+          fab_per_lm?: number
+          fab_per_unit?: Json
           id?: string
+          install_hourly_rate?: number
+          install_hours_per_unit?: Json
+          install_per_lm?: number
+          install_per_unit?: Json
+          labour_method?: string
           location?: string | null
           trade_type?: string | null
           updated_at?: string
