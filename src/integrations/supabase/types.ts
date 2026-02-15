@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      cabinets: {
+        Row: {
+          created_at: string
+          depth_mm: number
+          door_count: number
+          drawer_count: number
+          features: string[] | null
+          height_mm: number
+          id: string
+          label: string
+          notes: string | null
+          plan_id: string | null
+          project_id: string
+          shelf_count: number
+          type: string
+          updated_at: string
+          user_id: string
+          width_mm: number
+        }
+        Insert: {
+          created_at?: string
+          depth_mm?: number
+          door_count?: number
+          drawer_count?: number
+          features?: string[] | null
+          height_mm?: number
+          id?: string
+          label: string
+          notes?: string | null
+          plan_id?: string | null
+          project_id: string
+          shelf_count?: number
+          type?: string
+          updated_at?: string
+          user_id: string
+          width_mm?: number
+        }
+        Update: {
+          created_at?: string
+          depth_mm?: number
+          door_count?: number
+          drawer_count?: number
+          features?: string[] | null
+          height_mm?: number
+          id?: string
+          label?: string
+          notes?: string | null
+          plan_id?: string | null
+          project_id?: string
+          shelf_count?: number
+          type?: string
+          updated_at?: string
+          user_id?: string
+          width_mm?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cabinets_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cabinets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials: {
         Row: {
           category: string
@@ -62,6 +134,7 @@ export type Database = {
           file_size: number
           file_type: string
           id: string
+          project_id: string | null
           status: string
           updated_at: string
           user_id: string
@@ -74,6 +147,7 @@ export type Database = {
           file_size?: number
           file_type?: string
           id?: string
+          project_id?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -86,11 +160,20 @@ export type Database = {
           file_size?: number
           file_type?: string
           id?: string
+          project_id?: string | null
           status?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "plans_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -120,6 +203,48 @@ export type Database = {
           id?: string
           location?: string | null
           trade_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          address: string | null
+          client_email: string | null
+          client_name: string | null
+          client_phone: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          status?: string
           updated_at?: string
           user_id?: string
         }
