@@ -6,93 +6,54 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 230 25% 12%;
+    --background: 220 30% 5%;
+    --foreground: 180 100% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 230 25% 12%;
+    --card: 220 25% 8%;
+    --card-foreground: 180 100% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 230 25% 12%;
+    --popover: 220 25% 8%;
+    --popover-foreground: 180 100% 95%;
 
-    --primary: 316 100% 64%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 189 88% 65%;
+    --primary-foreground: 220 30% 5%;
 
-    --secondary: 230 68% 64%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 318 100% 64%;
+    --secondary-foreground: 220 30% 5%;
 
-    --muted: 220 20% 94%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 220 20% 20%;
+    --muted-foreground: 189 50% 60%;
 
-    --accent: 44 100% 68%;
-    --accent-foreground: 230 25% 12%;
+    --accent: 45 100% 68%;
+    --accent-foreground: 220 30% 5%;
 
-    --destructive: 8 90% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 180 100% 95%;
 
-    --border: 220 15% 90%;
-    --input: 220 15% 90%;
-    --ring: 316 100% 64%;
+    --border: 189 30% 25%;
+    --input: 220 25% 12%;
+    --ring: 189 88% 65%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    /* Kindai brand colors */
-    --kindai-pink: 316 100% 64%;
-    --kindai-orange: 8 97% 66%;
-    --kindai-yellow: 44 100% 68%;
-    --kindai-green: 157 56% 67%;
-    --kindai-aqua: 191 88% 65%;
-    --kindai-blue: 230 68% 64%;
-    --kindai-violet: 272 62% 46%;
+    --kindai-pink: 318 100% 64%;
+    --kindai-orange: 5 97% 66%;
+    --kindai-yellow: 45 100% 68%;
+    --kindai-green: 156 59% 60%;
+    --kindai-aqua: 189 88% 65%;
+    --kindai-blue: 233 68% 60%;
+    --kindai-violet: 275 63% 46%;
 
-    --sidebar-background: 230 25% 8%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 316 100% 64%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 230 25% 14%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 230 15% 18%;
-    --sidebar-ring: 316 100% 64%;
+    --sidebar-background: 220 30% 3%;
+    --sidebar-foreground: 180 100% 95%;
+    --sidebar-primary: 189 88% 65%;
+    --sidebar-primary-foreground: 220 30% 5%;
+    --sidebar-accent: 220 25% 10%;
+    --sidebar-accent-foreground: 180 100% 95%;
+    --sidebar-border: 189 30% 20%;
+    --sidebar-ring: 189 88% 65%;
   }
 
-  .dark {
-    --background: 230 25% 6%;
-    --foreground: 0 0% 95%;
-
-    --card: 230 25% 10%;
-    --card-foreground: 0 0% 95%;
-
-    --popover: 230 25% 10%;
-    --popover-foreground: 0 0% 95%;
-
-    --primary: 316 100% 64%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 230 68% 64%;
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 230 20% 16%;
-    --muted-foreground: 220 10% 60%;
-
-    --accent: 44 100% 68%;
-    --accent-foreground: 230 25% 8%;
-
-    --destructive: 8 90% 50%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 230 15% 18%;
-    --input: 230 15% 18%;
-    --ring: 316 100% 64%;
-
-    --sidebar-background: 230 25% 5%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 316 100% 64%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 230 25% 12%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 230 15% 15%;
-    --sidebar-ring: 316 100% 64%;
-  }
 }
 
 @layer base {
@@ -120,10 +81,22 @@
   .gradient-kindai-full {
     background: linear-gradient(135deg, hsl(var(--kindai-pink)), hsl(var(--kindai-orange)), hsl(var(--kindai-yellow)), hsl(var(--kindai-green)), hsl(var(--kindai-aqua)), hsl(var(--kindai-blue)), hsl(var(--kindai-violet)));
   }
-  .text-gradient-kindai {
+  .gradient-rebel {
     background: linear-gradient(135deg, hsl(var(--kindai-pink)), hsl(var(--kindai-orange)), hsl(var(--kindai-yellow)));
+  }
+  .gradient-energy {
+    background: linear-gradient(135deg, hsl(var(--kindai-aqua)), hsl(var(--kindai-pink)));
+  }
+  .text-gradient-kindai {
+    background: linear-gradient(135deg, hsl(var(--kindai-aqua)), hsl(var(--kindai-pink)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+  .shadow-glow {
+    box-shadow: 0 0 40px hsl(189 88% 65% / 0.4), 0 0 80px hsl(318 100% 64% / 0.2);
+  }
+  .shadow-card {
+    box-shadow: 0 8px 32px hsl(220 30% 5% / 0.8);
   }
 }
