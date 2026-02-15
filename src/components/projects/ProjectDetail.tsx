@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, FileImage, MapPin, User, Mail, Phone, StickyNote, Link2, Unlink, Package } from "lucide-react";
+import { ArrowLeft, FileImage, MapPin, User, Mail, Phone, StickyNote, Unlink, Package, Sparkles, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +108,61 @@ export default function ProjectDetail({ project, onBack }: Props) {
     },
   });
 
+  // Save analyzed cabinets from linked plans into cabinets table
+  const saveCabinetsMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Please sign in first");
+
+      const analyzedPlans = linkedPlans.filter(
+        (p) => p.status === "analyzed" && p.analysis?.cabinets?.length > 0
+      );
+      if (analyzedPlans.length === 0) throw new Error("No analyzed plans with cabinets found");
+
+      const rows = analyzedPlans.flatMap((plan) =>
+        (plan.analysis.cabinets as any[]).map((cab: any) => ({
+          user_id: user.id,
+          project_id: project.id,
+          plan_id: plan.id,
+          label: cab.label || "Untitled",
+          type: cab.type || "base",
+          width_mm: cab.width_mm || 600,
+          height_mm: cab.height_mm || 720,
+          depth_mm: cab.depth_mm || 560,
+          door_count: cab.door_count || 0,
+          drawer_count: cab.drawer_count || 0,
+          shelf_count: cab.shelf_count || 1,
+          features: cab.features || [],
+        }))
+      );
+
+      const { error } = await supabase.from("cabinets").insert(rows);
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["cabinets", project.id] });
+      toast.success(`Saved ${count} cabinets to project`);
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to save cabinets"),
+  });
+
+  const deleteCabinetMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("cabinets").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cabinets", project.id] });
+      toast.success("Cabinet deleted");
+    },
+  });
+
+  const analyzedLinkedPlans = linkedPlans.filter(
+    (p) => p.status === "analyzed" && p.analysis?.cabinets?.length > 0
+  );
+  const canSaveCabinets = analyzedLinkedPlans.length > 0;
+
   return (
     <div className="p-6 md:p-8 max-w-5xl">
       <Button variant="ghost" size="sm" onClick={onBack} className="mb-4">
@@ -176,6 +231,11 @@ export default function ProjectDetail({ project, onBack }: Props) {
                   <div>
                     <span className="font-medium text-sm">{plan.file_name}</span>
                     <Badge variant="secondary" className="ml-2 text-xs capitalize">{plan.status}</Badge>
+                    {plan.status === "analyzed" && plan.analysis?.cabinets && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {plan.analysis.cabinets.length} cabinets detected
+                      </span>
+                    )}
                   </div>
                   <Button size="sm" variant="ghost" onClick={() => unlinkPlan.mutate(plan.id)}>
                     <Unlink className="h-3.5 w-3.5 mr-1" /> Unlink
@@ -209,20 +269,45 @@ export default function ProjectDetail({ project, onBack }: Props) {
 
       {/* Cabinets */}
       <Card className="mt-6">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="font-display text-base flex items-center gap-2">
             <Package className="h-4 w-4 text-kindai-green" /> Cabinets ({cabinets.length})
           </CardTitle>
+          {canSaveCabinets && (
+            <Button
+              size="sm"
+              className="gradient-kindai border-0 font-semibold"
+              onClick={() => saveCabinetsMutation.mutate()}
+              disabled={saveCabinetsMutation.isPending}
+            >
+              {saveCabinetsMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5 mr-1" />
+              )}
+              Save from Plans
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {cabinets.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No cabinets saved to this project yet. Analyze a linked plan and save the results.
+              {canSaveCabinets
+                ? 'Click "Save from Plans" above to import detected cabinets from your analyzed plans.'
+                : "No cabinets saved yet. Link and analyze a plan first, then save the results."}
             </p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
               {cabinets.map((cab) => (
-                <div key={cab.id} className="rounded-lg border border-border bg-card p-3">
+                <div key={cab.id} className="rounded-lg border border-border bg-card p-3 group relative">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                    onClick={() => deleteCabinetMutation.mutate(cab.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className={typeColors[cab.type] || "bg-muted"}>
                       {cab.type}
