@@ -8,6 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { generateQuotePdf, type QuoteData, type QuoteLineItem } from "@/lib/generate-quote-pdf";
+import LabourConfigPanel from "@/components/quotes/LabourConfigPanel";
+import {
+  type LabourConfig,
+  type CabinetInput,
+  DEFAULT_LABOUR_CONFIG,
+  calculateLabour,
+} from "@/lib/labour-engine";
 
 const defaultItem = (): QuoteLineItem => ({
   id: crypto.randomUUID(),
@@ -37,6 +44,19 @@ export default function QuoteBuilder() {
     gstRate: 10,
   });
 
+  const [labourConfig, setLabourConfig] = useState<LabourConfig>(DEFAULT_LABOUR_CONFIG);
+
+  // Derive cabinet inputs from line items that look like cabinets
+  const cabinetInputs: CabinetInput[] = quote.items
+    .filter((i) => i.description && /cabinet|base|wall|tall|pantry|drawer|overhead/i.test(i.description))
+    .map((i) => ({
+      type: i.description,
+      width_mm: 600, // default; could be parsed from description
+      quantity: i.quantity,
+    }));
+
+  const labourBreakdown = cabinetInputs.length > 0 ? calculateLabour(cabinetInputs, labourConfig) : null;
+
   const updateField = (field: keyof QuoteData, value: any) =>
     setQuote((prev) => ({ ...prev, [field]: value }));
 
@@ -51,25 +71,57 @@ export default function QuoteBuilder() {
     setQuote((prev) => ({ ...prev, items: prev.items.filter((i) => i.id !== id) }));
 
   const subtotal = quote.items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
-  const gst = subtotal * (quote.gstRate / 100);
-  const total = subtotal + gst;
+  const labourFab = labourBreakdown?.fabTotal ?? 0;
+  const labourInstall = labourBreakdown?.installTotal ?? 0;
+  const labourTotal = labourFab + labourInstall;
+  const preGstTotal = subtotal + labourTotal;
+  const gst = preGstTotal * (quote.gstRate / 100);
+  const total = preGstTotal + gst;
+
+  const buildExportData = (): QuoteData => {
+    // Append labour as line items for PDF
+    const labourItems: QuoteLineItem[] = [];
+    if (labourBreakdown) {
+      if (labourBreakdown.fabTotal > 0) {
+        labourItems.push({
+          id: "labour-fab",
+          description: labourBreakdown.fabLineLabel,
+          quantity: 1,
+          unit: "lot",
+          unitPrice: labourBreakdown.fabTotal,
+        });
+      }
+      if (labourBreakdown.installTotal > 0) {
+        labourItems.push({
+          id: "labour-install",
+          description: labourBreakdown.installLineLabel,
+          quantity: 1,
+          unit: "lot",
+          unitPrice: labourBreakdown.installTotal,
+        });
+      }
+    }
+    return { ...quote, items: [...quote.items.filter((i) => i.description), ...labourItems] };
+  };
 
   const handleExportPdf = () => {
-    if (quote.items.length === 0 || !quote.items.some((i) => i.description)) {
+    const data = buildExportData();
+    if (data.items.length === 0) {
       toast({ title: "Add at least one line item", variant: "destructive" });
       return;
     }
-    const doc = generateQuotePdf(quote);
+    const doc = generateQuotePdf(data);
     doc.save(`${quote.quoteNumber}.pdf`);
     toast({ title: "PDF downloaded!", description: `${quote.quoteNumber}.pdf saved.` });
   };
 
   const handlePreview = () => {
-    if (quote.items.length === 0 || !quote.items.some((i) => i.description)) {
+    const data = buildExportData();
+    if (data.items.length === 0) {
       toast({ title: "Add at least one line item", variant: "destructive" });
       return;
     }
-    const doc = generateQuotePdf(quote);
+    const doc = generateQuotePdf(data);
     const blob = doc.output("blob");
     window.open(URL.createObjectURL(blob), "_blank");
   };
@@ -198,8 +250,7 @@ export default function QuoteBuilder() {
                     </TableCell>
                     <TableCell className="p-1.5">
                       <Input
-                        type="number"
-                        min={0}
+                        type="number" min={0}
                         value={item.quantity}
                         onChange={(e) => updateItem(item.id, "quantity", Number(e.target.value))}
                         className="border-0 bg-transparent shadow-none focus-visible:ring-1 text-center"
@@ -214,9 +265,7 @@ export default function QuoteBuilder() {
                     </TableCell>
                     <TableCell className="p-1.5">
                       <Input
-                        type="number"
-                        min={0}
-                        step={0.01}
+                        type="number" min={0} step={0.01}
                         value={item.unitPrice}
                         onChange={(e) => updateItem(item.id, "unitPrice", Number(e.target.value))}
                         className="border-0 bg-transparent shadow-none focus-visible:ring-1 text-right"
@@ -240,17 +289,34 @@ export default function QuoteBuilder() {
 
           {/* Totals */}
           <div className="mt-4 flex justify-end">
-            <div className="w-64 space-y-2 text-sm">
+            <div className="w-72 space-y-2 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span>
+                <span>Materials Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
+              {labourBreakdown && labourBreakdown.fabTotal > 0 && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Fabrication Labour</span>
+                  <span>${labourFab.toFixed(2)}</span>
+                </div>
+              )}
+              {labourBreakdown && labourBreakdown.installTotal > 0 && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Installation Labour</span>
+                  <span>${labourInstall.toFixed(2)}</span>
+                </div>
+              )}
+              {labourTotal > 0 && (
+                <div className="flex justify-between text-muted-foreground border-t border-border pt-1">
+                  <span>Pre-GST Total</span>
+                  <span>${preGstTotal.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="flex items-center gap-2">
                   GST
                   <Input
-                    type="number"
-                    min={0}
+                    type="number" min={0}
                     value={quote.gstRate}
                     onChange={(e) => updateField("gstRate", Number(e.target.value))}
                     className="h-7 w-14 text-center text-xs"
@@ -267,6 +333,15 @@ export default function QuoteBuilder() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Labour Config */}
+      <div className="mt-6">
+        <LabourConfigPanel
+          config={labourConfig}
+          onConfigChange={setLabourConfig}
+          cabinets={cabinetInputs}
+        />
+      </div>
 
       {/* Notes */}
       <Card className="mt-6">
