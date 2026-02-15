@@ -11,6 +11,7 @@ import UploadPlans from "./pages/UploadPlans";
 import MaterialTakeoff from "./pages/MaterialTakeoff";
 import Pricing from "./pages/Pricing";
 import Estimates from "./pages/Estimates";
+import QuoteBuilder from "./pages/QuoteBuilder";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/takeoff" element={<MaterialTakeoff />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/estimates" element={<Estimates />} />
+            <Route path="/quotes" element={<QuoteBuilder />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
