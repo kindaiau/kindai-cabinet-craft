@@ -4,28 +4,56 @@ import { ArrowRight, Upload, Calculator, DollarSign, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import kindaiLogo from "@/assets/kindai-logo.png";
 
+const kindaiColors = [
+  "hsl(316, 100%, 64%)",  // pink
+  "hsl(8, 97%, 66%)",     // orange
+  "hsl(44, 100%, 68%)",   // yellow
+  "hsl(157, 56%, 67%)",   // green
+  "hsl(191, 88%, 65%)",   // aqua
+  "hsl(230, 68%, 64%)",   // blue
+  "hsl(272, 62%, 46%)",   // violet
+];
+
+const rainbowText = (text: string) =>
+  text.split("").map((char, i) => (
+    <span key={i} style={{ color: kindaiColors[i % kindaiColors.length] }}>
+      {char === " " ? "\u00A0" : char}
+    </span>
+  ));
+
+const navItems = [
+  { label: "Upload Plans", href: "#upload-plans" },
+  { label: "Take-Off", href: "#take-off" },
+  { label: "Pricing", href: "#pricing" },
+  { label: "Estimates", href: "#estimates" },
+];
+
 const features = [
   {
     icon: Upload,
     title: "Upload Plans",
+    id: "upload-plans",
     description: "Drop your floor plans, elevations, or sketches. AI extracts every cabinet automatically.",
     color: "bg-kindai-pink/10 text-kindai-pink",
   },
   {
     icon: Calculator,
     title: "Material Take-Off",
+    id: "take-off",
     description: "Full breakdown — sheets, hardware, edge banding, benchtops — calculated to AU standards.",
     color: "bg-kindai-aqua/10 text-kindai-aqua",
   },
   {
     icon: DollarSign,
     title: "Live Pricing",
+    id: "pricing",
     description: "Real-time supplier pricing from Bunnings, Polytec, Laminex, Hafele and more.",
     color: "bg-kindai-green/10 text-kindai-green",
   },
   {
     icon: Zap,
     title: "Instant Estimates",
+    id: "estimates",
     description: "Export professional quotes in seconds. Share with clients or save for later.",
     color: "bg-kindai-orange/10 text-kindai-orange",
   },
@@ -33,23 +61,36 @@ const features = [
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background scroll-smooth">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 md:px-12">
-        <div className="flex items-center gap-3">
-          <img src={kindaiLogo} alt="Kindai" className="h-9 w-9 rounded-lg" />
-          <span className="font-display text-2xl font-bold text-gradient-kindai">Kindai</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link to="/auth">
-            <Button variant="ghost" className="font-medium">Log in</Button>
-          </Link>
+      <header className="px-6 py-4 md:px-12">
+        {/* Top row: Logo left, Get Started right */}
+        <div className="flex items-center justify-between">
+          <img src={kindaiLogo} alt="Kindai" className="h-12 w-12 rounded-lg" />
           <Link to="/auth?signup=true">
             <Button className="gradient-kindai border-0 font-semibold">
               Get Started <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </Link>
         </div>
+
+        {/* Second row: Nav links + Log in */}
+        <nav className="mt-3 flex items-center justify-center gap-6 flex-wrap">
+          {navItems.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="font-display text-sm font-semibold tracking-wide hover:opacity-80 transition-opacity"
+            >
+              {rainbowText(item.label)}
+            </a>
+          ))}
+          <Link to="/auth">
+            <Button variant="ghost" className="font-display text-sm font-semibold">
+              {rainbowText("Log in")}
+            </Button>
+          </Link>
+        </nav>
       </header>
 
       {/* Hero */}
@@ -93,10 +134,11 @@ export default function Landing() {
           {features.map((f, i) => (
             <motion.div
               key={f.title}
+              id={f.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 * i }}
-              className="group rounded-2xl border border-border bg-card p-6 transition-all hover:shadow-lg hover:border-kindai-pink/30"
+              className="group rounded-2xl border border-border bg-card p-6 transition-all hover:shadow-lg hover:border-kindai-pink/30 scroll-mt-24"
             >
               <div className={`mb-4 inline-flex rounded-xl p-3 ${f.color}`}>
                 <f.icon className="h-6 w-6" />
