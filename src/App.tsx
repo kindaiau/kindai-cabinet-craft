@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -27,7 +28,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
-          <Route element={<AppLayout />}>
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upload" element={<UploadPlans />} />
             <Route path="/takeoff" element={<MaterialTakeoff />} />
@@ -36,6 +38,7 @@ const App = () => (
             <Route path="/quotes" element={<QuoteBuilder />} />
             <Route path="/materials" element={<MaterialsLibrary />} />
             <Route path="/settings" element={<SettingsPage />} />
+          </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
