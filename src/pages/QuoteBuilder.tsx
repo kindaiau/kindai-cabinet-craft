@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, Plus, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +11,14 @@ import { generateQuotePdf, type QuoteData, type QuoteLineItem } from "@/lib/gene
 import LabourConfigPanel from "@/components/quotes/LabourConfigPanel";
 import {
   type LabourConfig,
+  type LabourMethod,
   type CabinetInput,
+  type PricePerUnit,
+  type HoursPerUnit,
   DEFAULT_LABOUR_CONFIG,
   calculateLabour,
 } from "@/lib/labour-engine";
+import { supabase } from "@/integrations/supabase/client";
 
 const defaultItem = (): QuoteLineItem => ({
   id: crypto.randomUUID(),
@@ -46,7 +50,36 @@ export default function QuoteBuilder() {
 
   const [labourConfig, setLabourConfig] = useState<LabourConfig>(DEFAULT_LABOUR_CONFIG);
 
-  // Derive cabinet inputs from line items that look like cabinets
+  // Load saved labour defaults from profile on mount
+  useEffect(() => {
+    const loadDefaults = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("labour_method, fab_hourly_rate, install_hourly_rate, fab_per_lm, install_per_lm, fab_per_unit, install_per_unit, fab_hours_per_unit, install_hours_per_unit, business_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!profile) return;
+      setLabourConfig({
+        method: profile.labour_method as LabourMethod,
+        fabHourlyRate: Number(profile.fab_hourly_rate),
+        installHourlyRate: Number(profile.install_hourly_rate),
+        fabPerLm: Number(profile.fab_per_lm),
+        installPerLm: Number(profile.install_per_lm),
+        fabPerUnit: profile.fab_per_unit as unknown as PricePerUnit,
+        installPerUnit: profile.install_per_unit as unknown as PricePerUnit,
+        fabHoursPerUnit: profile.fab_hours_per_unit as unknown as HoursPerUnit,
+        installHoursPerUnit: profile.install_hours_per_unit as unknown as HoursPerUnit,
+      });
+      if (profile.business_name) {
+        setQuote((prev) => ({ ...prev, businessName: prev.businessName || profile.business_name || "" }));
+      }
+    };
+    loadDefaults();
+  }, []);
+
+
   const cabinetInputs: CabinetInput[] = quote.items
     .filter((i) => i.description && /cabinet|base|wall|tall|pantry|drawer|overhead/i.test(i.description))
     .map((i) => ({
