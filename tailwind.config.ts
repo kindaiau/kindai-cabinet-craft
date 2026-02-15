@@ -3,7 +3,11 @@ import type { Config } from "tailwindcss";
 export default {
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
-  prefix: "",
+  safelist: [
+    "text-kindai-pink", "text-kindai-aqua", "text-kindai-green", "text-kindai-orange",
+    "bg-kindai-pink/10", "bg-kindai-aqua/10", "bg-kindai-green/10", "bg-kindai-orange/10",
+    "ring-kindai-pink/20", "ring-kindai-aqua/20", "ring-kindai-green/20", "ring-kindai-orange/20",
+  ],
   theme: {
     container: {
       center: true,

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Upload, Calculator, DollarSign, Zap } from "lucide-react";
+import { ArrowRight, Upload, Calculator, DollarSign, Zap, FileUp, Cpu, BarChart3, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import kindaiLogo from "@/assets/kindai-logo.png";
 
@@ -151,6 +151,92 @@ export default function Landing() {
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.description}</p>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="relative px-6 py-24 md:px-12 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-kindai-violet/5 blur-3xl" />
+        </div>
+
+        <div className="mx-auto max-w-5xl relative">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-16"
+          >
+            <h2 className="font-display text-3xl font-bold md:text-4xl">
+              How It <span className="text-gradient-kindai">Works</span>
+            </h2>
+            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">
+              From plans to quotes in four simple steps — no spreadsheets, no guesswork.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-8 md:grid-cols-4">
+            {[
+              {
+                step: "01",
+                icon: FileUp,
+                title: "Upload",
+                desc: "Drag & drop your floor plans, elevations, or hand-drawn sketches.",
+                accent: "kindai-pink",
+              },
+              {
+                step: "02",
+                icon: Cpu,
+                title: "AI Detects",
+                desc: "Our AI scans every page and extracts cabinets, dimensions, and features.",
+                accent: "kindai-aqua",
+              },
+              {
+                step: "03",
+                icon: BarChart3,
+                title: "Take-Off",
+                desc: "Materials are calculated — sheets, hardware, edge banding, benchtops.",
+                accent: "kindai-green",
+              },
+              {
+                step: "04",
+                icon: FileText,
+                title: "Quote",
+                desc: "Get live supplier pricing and export a professional estimate instantly.",
+                accent: "kindai-orange",
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={item.step}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.15 * i }}
+                className="relative flex flex-col items-center text-center"
+              >
+                {/* Connector line */}
+                {i < 3 && (
+                  <div className="hidden md:block absolute top-10 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px border-t-2 border-dashed border-border" />
+                )}
+
+                {/* Step number badge */}
+                <div className={`mb-4 text-xs font-bold tracking-widest text-${item.accent}`}>
+                  STEP {item.step}
+                </div>
+
+                {/* Icon circle */}
+                <div className={`mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-${item.accent}/10 ring-1 ring-${item.accent}/20`}>
+                  <item.icon className={`h-9 w-9 text-${item.accent}`} />
+                </div>
+
+                <h3 className="font-display text-lg font-semibold">{item.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-[200px]">
+                  {item.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
