@@ -1,0 +1,117 @@
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ArrowRight, Upload, Calculator, DollarSign, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import kindaiLogo from "@/assets/kindai-logo.png";
+
+const features = [
+  {
+    icon: Upload,
+    title: "Upload Plans",
+    description: "Drop your floor plans, elevations, or sketches. AI extracts every cabinet automatically.",
+    color: "bg-kindai-pink/10 text-kindai-pink",
+  },
+  {
+    icon: Calculator,
+    title: "Material Take-Off",
+    description: "Full breakdown — sheets, hardware, edge banding, benchtops — calculated to AU standards.",
+    color: "bg-kindai-aqua/10 text-kindai-aqua",
+  },
+  {
+    icon: DollarSign,
+    title: "Live Pricing",
+    description: "Real-time supplier pricing from Bunnings, Polytec, Laminex, Hafele and more.",
+    color: "bg-kindai-green/10 text-kindai-green",
+  },
+  {
+    icon: Zap,
+    title: "Instant Estimates",
+    description: "Export professional quotes in seconds. Share with clients or save for later.",
+    color: "bg-kindai-orange/10 text-kindai-orange",
+  },
+];
+
+export default function Landing() {
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 py-4 md:px-12">
+        <div className="flex items-center gap-3">
+          <img src={kindaiLogo} alt="Kindai" className="h-9 w-9 rounded-lg" />
+          <span className="font-display text-2xl font-bold text-gradient-kindai">Kindai</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link to="/auth">
+            <Button variant="ghost" className="font-medium">Log in</Button>
+          </Link>
+          <Link to="/auth?signup=true">
+            <Button className="gradient-kindai border-0 font-semibold">
+              Get Started <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="relative flex flex-col items-center px-6 pt-20 pb-16 text-center md:pt-32 md:pb-24">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-3xl"
+        >
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-kindai-pink/30 bg-kindai-pink/5 px-4 py-1.5 text-sm font-medium text-kindai-pink">
+            <Zap className="h-3.5 w-3.5" /> Built for Australian Cabinet Makers
+          </div>
+          <h1 className="font-display text-5xl font-bold leading-tight tracking-tight md:text-6xl lg:text-7xl">
+            AI-Powered{" "}
+            <span className="text-gradient-kindai">Cabinet Estimates</span>{" "}
+            in Minutes
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
+            Upload your plans, get accurate material take-offs, and find the best supplier pricing — all in one place.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-4">
+            <Link to="/auth?signup=true">
+              <Button size="lg" className="gradient-kindai border-0 text-base font-semibold px-8">
+                Start Estimating <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Decorative gradient orbs */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-kindai-pink/10 blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-kindai-blue/10 blur-3xl" />
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="px-6 pb-24 md:px-12">
+        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
+          {features.map((f, i) => (
+            <motion.div
+              key={f.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 * i }}
+              className="group rounded-2xl border border-border bg-card p-6 transition-all hover:shadow-lg hover:border-kindai-pink/30"
+            >
+              <div className={`mb-4 inline-flex rounded-xl p-3 ${f.color}`}>
+                <f.icon className="h-6 w-6" />
+              </div>
+              <h3 className="font-display text-lg font-semibold">{f.title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.description}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border px-6 py-8 text-center text-sm text-muted-foreground">
+        © {new Date().getFullYear()} Kindai. Built for Aussie tradies.
+      </footer>
+    </div>
+  );
+}
