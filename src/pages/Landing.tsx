@@ -14,19 +14,6 @@ const kindaiColors = [
   "hsl(272, 62%, 46%)",   // violet
 ];
 
-const rainbowText = (text: string) =>
-  text.split("").map((char, i) => (
-    <span key={i} style={{ color: kindaiColors[i % kindaiColors.length] }}>
-      {char === " " ? "\u00A0" : char}
-    </span>
-  ));
-
-const navItems = [
-  { label: "Upload Plans", href: "#upload-plans" },
-  { label: "Take-Off", href: "#take-off" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Estimates", href: "#estimates" },
-];
 
 const features = [
   {
@@ -74,27 +61,6 @@ export default function Landing() {
           </Link>
         </div>
 
-        {/* Second row: Nav links + Log in */}
-        <nav className="mt-3 flex items-center justify-center gap-6 flex-wrap">
-          {navItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              onClick={(e) => {
-                e.preventDefault();
-                document.querySelector(item.href)?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="font-display text-sm font-semibold tracking-wide hover:opacity-80 transition-opacity cursor-pointer"
-            >
-              {rainbowText(item.label)}
-            </a>
-          ))}
-          <Link to="/auth">
-            <Button variant="ghost" className="font-display text-sm font-semibold">
-              {rainbowText("Log in")}
-            </Button>
-          </Link>
-        </nav>
       </header>
 
       {/* Hero */}
