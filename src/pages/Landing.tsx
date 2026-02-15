@@ -146,9 +146,11 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 * i }}
-              className="group rounded-2xl border border-border bg-card p-6 transition-all hover:shadow-lg hover:border-primary/30 scroll-mt-24"
+              className="group rounded-2xl border border-border bg-card p-6 transition-all hover:shadow-[0_0_30px_hsl(var(--primary)/0.12)] hover:border-primary/40 scroll-mt-24 relative overflow-hidden"
             >
-              <div className={`mb-4 inline-flex rounded-xl p-3 ${f.color}`}>
+              {/* Subtle corner glow on hover */}
+              <div className="pointer-events-none absolute -top-12 -right-12 h-24 w-24 rounded-full bg-primary/0 group-hover:bg-primary/10 blur-2xl transition-all duration-500" />
+              <div className={`mb-4 inline-flex rounded-xl p-3 ${f.color} ring-1 ring-current/20`}>
                 <f.icon className="h-6 w-6" />
               </div>
               <h3 className="font-display text-lg font-semibold">{f.title}</h3>
@@ -217,11 +219,11 @@ export default function Landing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.15 * i }}
-                className="relative flex flex-col items-center text-center"
+                className="relative flex flex-col items-center text-center group"
               >
                 {/* Connector line */}
                 {i < 3 && (
-                  <div className="hidden md:block absolute top-10 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px border-t-2 border-dashed border-border" />
+                  <div className="hidden md:block absolute top-10 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px border-t-2 border-dashed border-primary/20" />
                 )}
 
                 {/* Step number badge */}
@@ -229,8 +231,8 @@ export default function Landing() {
                   STEP {item.step}
                 </div>
 
-                {/* Icon circle */}
-                <div className={`mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-${item.accent}/10 ring-1 ring-${item.accent}/20`}>
+                {/* Icon circle with glow */}
+                <div className={`mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-${item.accent}/10 ring-1 ring-${item.accent}/20 group-hover:shadow-[0_0_24px_hsl(var(--${item.accent})/0.25)] transition-shadow duration-300`}>
                   <item.icon className={`h-9 w-9 text-${item.accent}`} />
                 </div>
 
