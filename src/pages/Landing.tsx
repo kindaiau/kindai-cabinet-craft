@@ -71,7 +71,7 @@ export default function Landing() {
           transition={{ duration: 0.6 }}
           className="max-w-3xl"
         >
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-kindai-pink/30 bg-kindai-pink/5 px-4 py-1.5 text-sm font-medium text-kindai-pink">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
             <Zap className="h-3.5 w-3.5" /> Built for Australian Cabinet Makers
           </div>
           <h1 className="font-display text-5xl font-bold leading-tight tracking-tight md:text-6xl lg:text-7xl">
@@ -93,8 +93,8 @@ export default function Landing() {
 
         {/* Decorative gradient orbs */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-kindai-pink/10 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-kindai-blue/10 blur-3xl" />
+          <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-secondary/10 blur-3xl" />
         </div>
       </section>
 
@@ -108,7 +108,7 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 * i }}
-              className="group rounded-2xl border border-border bg-card p-6 transition-all hover:shadow-lg hover:border-kindai-pink/30 scroll-mt-24"
+              className="group rounded-2xl border border-border bg-card p-6 transition-all hover:shadow-lg hover:border-primary/30 scroll-mt-24"
             >
               <div className={`mb-4 inline-flex rounded-xl p-3 ${f.color}`}>
                 <f.icon className="h-6 w-6" />
