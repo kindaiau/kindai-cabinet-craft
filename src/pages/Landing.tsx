@@ -64,19 +64,57 @@ export default function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative flex flex-col items-center px-6 pt-20 pb-16 text-center md:pt-32 md:pb-24">
+      <section className="relative flex flex-col items-center px-6 pt-20 pb-16 text-center md:pt-32 md:pb-24 overflow-hidden">
+        {/* Animated neon grid background */}
+        <div className="pointer-events-none absolute inset-0">
+          <div
+            className="absolute inset-0 opacity-[0.04]"
+            style={{
+              backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+              backgroundSize: "60px 60px",
+            }}
+          />
+        </div>
+
+        {/* Neon glow orbs */}
+        <div className="pointer-events-none absolute inset-0">
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full blur-[120px]"
+            style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.4), transparent 70%)" }}
+          />
+          <motion.div
+            animate={{ scale: [1.1, 1, 1.1], opacity: [0.25, 0.45, 0.25] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute -bottom-32 -left-32 h-[500px] w-[500px] rounded-full blur-[120px]"
+            style={{ background: "radial-gradient(circle, hsl(var(--secondary) / 0.35), transparent 70%)" }}
+          />
+          <motion.div
+            animate={{ opacity: [0.1, 0.25, 0.1] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            className="absolute top-1/3 left-1/2 -translate-x-1/2 h-[300px] w-[600px] rounded-full blur-[100px]"
+            style={{ background: "radial-gradient(ellipse, hsl(var(--kindai-violet) / 0.2), transparent 70%)" }}
+          />
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="max-w-3xl"
+          className="relative max-w-3xl"
         >
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary shadow-[0_0_20px_hsl(var(--primary)/0.15)]">
             <Zap className="h-3.5 w-3.5" /> Built for Australian Cabinet Makers
           </div>
           <h1 className="font-display text-5xl font-bold leading-tight tracking-tight md:text-6xl lg:text-7xl">
             AI-Powered{" "}
-            <span className="text-gradient-kindai">Cabinet Estimates</span>{" "}
+            <span
+              className="bg-clip-text text-transparent"
+              style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))" }}
+            >
+              Cabinet Estimates
+            </span>{" "}
             in Minutes
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
@@ -84,18 +122,18 @@ export default function Landing() {
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Link to="/auth?signup=true">
-              <Button size="lg" className="gradient-kindai border-0 text-base font-semibold px-8">
+              <Button
+                size="lg"
+                className="relative gradient-energy border-0 text-base font-semibold px-8 shadow-[0_0_30px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_50px_hsl(var(--primary)/0.5)] transition-shadow duration-300"
+              >
                 Start Estimating <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
         </motion.div>
 
-        {/* Decorative gradient orbs */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-secondary/10 blur-3xl" />
-        </div>
+        {/* Bottom edge glow line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
       </section>
 
       {/* Features */}
