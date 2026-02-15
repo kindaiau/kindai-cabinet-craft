@@ -1,0 +1,287 @@
+import { useState } from "react";
+import { Download, Plus, Trash2, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { generateQuotePdf, type QuoteData, type QuoteLineItem } from "@/lib/generate-quote-pdf";
+
+const defaultItem = (): QuoteLineItem => ({
+  id: crypto.randomUUID(),
+  description: "",
+  quantity: 1,
+  unit: "ea",
+  unitPrice: 0,
+});
+
+export default function QuoteBuilder() {
+  const { toast } = useToast();
+  const [quote, setQuote] = useState<QuoteData>({
+    businessName: "",
+    businessAbn: "",
+    businessAddress: "",
+    businessPhone: "",
+    businessEmail: "",
+    clientName: "",
+    clientAddress: "",
+    clientEmail: "",
+    quoteNumber: `Q-${Date.now().toString(36).toUpperCase()}`,
+    quoteDate: new Date().toISOString().split("T")[0],
+    validUntil: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+    projectName: "",
+    items: [defaultItem()],
+    notes: "• 50% deposit required to commence work\n• Balance due on completion\n• Quote valid for 30 days",
+    gstRate: 10,
+  });
+
+  const updateField = (field: keyof QuoteData, value: any) =>
+    setQuote((prev) => ({ ...prev, [field]: value }));
+
+  const updateItem = (id: string, field: keyof QuoteLineItem, value: any) =>
+    setQuote((prev) => ({
+      ...prev,
+      items: prev.items.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    }));
+
+  const addItem = () => setQuote((prev) => ({ ...prev, items: [...prev.items, defaultItem()] }));
+  const removeItem = (id: string) =>
+    setQuote((prev) => ({ ...prev, items: prev.items.filter((i) => i.id !== id) }));
+
+  const subtotal = quote.items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
+  const gst = subtotal * (quote.gstRate / 100);
+  const total = subtotal + gst;
+
+  const handleExportPdf = () => {
+    if (quote.items.length === 0 || !quote.items.some((i) => i.description)) {
+      toast({ title: "Add at least one line item", variant: "destructive" });
+      return;
+    }
+    const doc = generateQuotePdf(quote);
+    doc.save(`${quote.quoteNumber}.pdf`);
+    toast({ title: "PDF downloaded!", description: `${quote.quoteNumber}.pdf saved.` });
+  };
+
+  const handlePreview = () => {
+    if (quote.items.length === 0 || !quote.items.some((i) => i.description)) {
+      toast({ title: "Add at least one line item", variant: "destructive" });
+      return;
+    }
+    const doc = generateQuotePdf(quote);
+    const blob = doc.output("blob");
+    window.open(URL.createObjectURL(blob), "_blank");
+  };
+
+  return (
+    <div className="p-6 md:p-8 max-w-5xl">
+      {/* Header */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-bold">Quote Builder</h1>
+          <p className="mt-1 text-muted-foreground">Create professional quotes for your clients</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handlePreview}>
+            <Eye className="mr-2 h-4 w-4" /> Preview
+          </Button>
+          <Button className="gradient-kindai border-0 font-semibold" onClick={handleExportPdf}>
+            <Download className="mr-2 h-4 w-4" /> Export PDF
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        {/* Your Business */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="font-display text-base">Your Business</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Business Name</Label>
+              <Input value={quote.businessName} onChange={(e) => updateField("businessName", e.target.value)} placeholder="Smith Cabinetry" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">ABN</Label>
+              <Input value={quote.businessAbn} onChange={(e) => updateField("businessAbn", e.target.value)} placeholder="12 345 678 901" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Address</Label>
+              <Input value={quote.businessAddress} onChange={(e) => updateField("businessAddress", e.target.value)} placeholder="123 Workshop Rd, Melbourne VIC 3000" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Phone</Label>
+                <Input value={quote.businessPhone} onChange={(e) => updateField("businessPhone", e.target.value)} placeholder="0412 345 678" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Email</Label>
+                <Input value={quote.businessEmail} onChange={(e) => updateField("businessEmail", e.target.value)} placeholder="info@smithcab.com.au" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Client Details */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="font-display text-base">Client Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Client Name</Label>
+              <Input value={quote.clientName} onChange={(e) => updateField("clientName", e.target.value)} placeholder="Jane Builder" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Address</Label>
+              <Input value={quote.clientAddress} onChange={(e) => updateField("clientAddress", e.target.value)} placeholder="456 Client St, Sydney NSW 2000" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Email</Label>
+              <Input value={quote.clientEmail} onChange={(e) => updateField("clientEmail", e.target.value)} placeholder="jane@example.com" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Quote #</Label>
+                <Input value={quote.quoteNumber} onChange={(e) => updateField("quoteNumber", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Date</Label>
+                <Input type="date" value={quote.quoteDate} onChange={(e) => updateField("quoteDate", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Valid Until</Label>
+                <Input type="date" value={quote.validUntil} onChange={(e) => updateField("validUntil", e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Project Name</Label>
+              <Input value={quote.projectName} onChange={(e) => updateField("projectName", e.target.value)} placeholder="Kitchen renovation — 42 Oak Ave" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Line Items */}
+      <Card className="mt-6">
+        <CardHeader className="pb-4 flex flex-row items-center justify-between">
+          <CardTitle className="font-display text-base">Line Items</CardTitle>
+          <Button size="sm" variant="outline" onClick={addItem}>
+            <Plus className="mr-1 h-3.5 w-3.5" /> Add Item
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[200px]">Description</TableHead>
+                  <TableHead className="w-20">Qty</TableHead>
+                  <TableHead className="w-24">Unit</TableHead>
+                  <TableHead className="w-28">Unit Price</TableHead>
+                  <TableHead className="w-28 text-right">Total</TableHead>
+                  <TableHead className="w-10" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {quote.items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="p-1.5">
+                      <Input
+                        value={item.description}
+                        onChange={(e) => updateItem(item.id, "description", e.target.value)}
+                        placeholder="18mm White Melamine Carcass"
+                        className="border-0 bg-transparent shadow-none focus-visible:ring-1"
+                      />
+                    </TableCell>
+                    <TableCell className="p-1.5">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={item.quantity}
+                        onChange={(e) => updateItem(item.id, "quantity", Number(e.target.value))}
+                        className="border-0 bg-transparent shadow-none focus-visible:ring-1 text-center"
+                      />
+                    </TableCell>
+                    <TableCell className="p-1.5">
+                      <Input
+                        value={item.unit}
+                        onChange={(e) => updateItem(item.id, "unit", e.target.value)}
+                        className="border-0 bg-transparent shadow-none focus-visible:ring-1 text-center"
+                      />
+                    </TableCell>
+                    <TableCell className="p-1.5">
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        value={item.unitPrice}
+                        onChange={(e) => updateItem(item.id, "unitPrice", Number(e.target.value))}
+                        className="border-0 bg-transparent shadow-none focus-visible:ring-1 text-right"
+                      />
+                    </TableCell>
+                    <TableCell className="p-1.5 text-right font-medium">
+                      ${(item.quantity * item.unitPrice).toFixed(2)}
+                    </TableCell>
+                    <TableCell className="p-1.5">
+                      {quote.items.length > 1 && (
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Totals */}
+          <div className="mt-4 flex justify-end">
+            <div className="w-64 space-y-2 text-sm">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span>${subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="flex items-center gap-2">
+                  GST
+                  <Input
+                    type="number"
+                    min={0}
+                    value={quote.gstRate}
+                    onChange={(e) => updateField("gstRate", Number(e.target.value))}
+                    className="h-7 w-14 text-center text-xs"
+                  />
+                  %
+                </span>
+                <span>${gst.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-t border-border pt-2 font-display text-lg font-bold text-kindai-pink">
+                <span>Total</span>
+                <span>${total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Notes */}
+      <Card className="mt-6">
+        <CardHeader className="pb-4">
+          <CardTitle className="font-display text-base">Notes & Terms</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            rows={4}
+            value={quote.notes}
+            onChange={(e) => updateField("notes", e.target.value)}
+            placeholder="Payment terms, conditions, or additional notes..."
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
