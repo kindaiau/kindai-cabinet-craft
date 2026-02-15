@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Upload, Calculator, DollarSign, FileText, FilePen, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Upload, Calculator, DollarSign, FileText, FilePen, Package, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import kindaiLogo from "@/assets/kindai-logo.png";
 
@@ -10,6 +10,7 @@ const navItems = [
   { label: "Pricing", icon: DollarSign, path: "/pricing" },
   { label: "Estimates", icon: FileText, path: "/estimates" },
   { label: "Quote Builder", icon: FilePen, path: "/quotes" },
+  { label: "Materials", icon: Package, path: "/materials" },
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
