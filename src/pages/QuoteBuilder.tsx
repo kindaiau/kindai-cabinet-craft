@@ -20,6 +20,9 @@ import {
   calculateLabour,
 } from "@/lib/labour-engine";
 import { supabase } from "@/integrations/supabase/client";
+import { ConfidenceChip } from "@/components/trust/ConfidenceChip";
+import { AssumptionBlock } from "@/components/trust/AssumptionBlock";
+import { ReviewGateBanner } from "@/components/trust/ReviewGateBanner";
 
 const defaultItem = (): QuoteLineItem => ({
   id: crypto.randomUUID(),
@@ -132,6 +135,29 @@ export default function QuoteBuilder() {
   const gst = preGstTotal * (quote.gstRate / 100);
   const total = preGstTotal + gst;
 
+  const hasEmptyDescriptions = quote.items.some((item) => !item.description.trim());
+  const hasZeroPriceItems = quote.items.some((item) => item.description.trim() && item.unitPrice <= 0);
+  const assumptions: string[] = [];
+
+  if (cabinetInputs.length > 0) {
+    assumptions.push("Cabinet width defaults to 600mm when dimensions are not provided.");
+  }
+
+  if (!quote.clientEmail) {
+    assumptions.push("Client email is missing and will need confirmation before sending.");
+  }
+
+  if (!quote.businessAbn) {
+    assumptions.push("ABN not provided yet. Add this before issuing a formal quote.");
+  }
+
+  const requiresManualReview = hasEmptyDescriptions || hasZeroPriceItems;
+  const confidenceLevel: "high" | "medium" | "low" = requiresManualReview
+    ? "low"
+    : assumptions.length > 0
+      ? "medium"
+      : "high";
+
   const buildExportData = (): QuoteData => {
     // Append labour as line items for PDF
     const labourItems: QuoteLineItem[] = [];
@@ -187,6 +213,9 @@ export default function QuoteBuilder() {
         <div>
           <h1 className="font-display text-3xl font-bold">Quote Builder</h1>
           <p className="mt-1 text-muted-foreground">Create professional quotes for your clients</p>
+          <div className="mt-3">
+            <ConfidenceChip level={confidenceLevel} />
+          </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handlePreview}>
@@ -270,6 +299,12 @@ export default function QuoteBuilder() {
           </CardContent>
         </Card>
       </div>
+
+      {requiresManualReview && (
+        <div className="mt-6">
+          <ReviewGateBanner description="Some line items are incomplete or priced at $0.00. Review these before sharing the quote." />
+        </div>
+      )}
 
       {/* Line Items */}
       <Card className="mt-6">
@@ -397,6 +432,10 @@ export default function QuoteBuilder() {
           cabinets={cabinetInputs}
         />
       </div>
+
+      {assumptions.length > 0 && (
+        <AssumptionBlock className="mt-6" items={assumptions} />
+      )}
 
       {/* Notes */}
       <Card className="mt-6">
