@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { generateQuotePdf, type QuoteData, type QuoteLineItem } from "@/lib/generate-quote-pdf";
 import LabourConfigPanel from "@/components/quotes/LabourConfigPanel";
+import ProjectSelector from "@/components/quotes/ProjectSelector";
 import {
   type LabourConfig,
   type LabourMethod,
@@ -78,6 +79,26 @@ export default function QuoteBuilder() {
     };
     loadDefaults();
   }, []);
+
+  const handleProjectSelected = (project: any, cabinets: any[]) => {
+    if (!project) return;
+    setQuote((prev) => ({
+      ...prev,
+      clientName: project.client_name || prev.clientName,
+      clientAddress: project.address || prev.clientAddress,
+      clientEmail: project.client_email || prev.clientEmail,
+      projectName: project.name || prev.projectName,
+      items: cabinets.length > 0
+        ? cabinets.map((c) => ({
+            id: crypto.randomUUID(),
+            description: `${c.label} (${c.type}, ${c.width_mm}mm)`,
+            quantity: c.count,
+            unit: "ea",
+            unitPrice: 0,
+          }))
+        : prev.items,
+    }));
+  };
 
 
   const cabinetInputs: CabinetInput[] = quote.items
@@ -215,6 +236,7 @@ export default function QuoteBuilder() {
             <CardTitle className="font-display text-base">Client Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <ProjectSelector onProjectSelected={handleProjectSelected} />
             <div className="space-y-1.5">
               <Label className="text-xs">Client Name</Label>
               <Input value={quote.clientName} onChange={(e) => updateField("clientName", e.target.value)} placeholder="Jane Builder" />
