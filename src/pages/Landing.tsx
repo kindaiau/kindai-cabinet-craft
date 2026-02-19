@@ -120,13 +120,22 @@ export default function Landing() {
           <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
             Upload your plans, get accurate material take-offs, and find the best supplier pricing — all in one place.
           </p>
-          <div className="mt-8 flex items-center justify-center gap-4">
+          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link to="/auth?signup=true">
               <Button
                 size="lg"
                 className="relative gradient-energy border-0 text-base font-semibold px-8 shadow-[0_0_30px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_50px_hsl(var(--primary)/0.5)] transition-shadow duration-300"
               >
                 Start Estimating <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/auth?signup=true">
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-base font-semibold px-8"
+              >
+                Join the Waiting List
               </Button>
             </Link>
           </div>

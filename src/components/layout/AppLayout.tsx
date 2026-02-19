@@ -7,13 +7,32 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import kindaiLogo from "@/assets/kindai-logo.png";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { useTrialContext } from "@/contexts/TrialContext";
+import { TrialBanner } from "@/components/trial/TrialBanner";
+import { WaitlistScreen } from "@/components/trial/WaitlistScreen";
 
 export function AppLayout() {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
+  const { accountStatus, isLoading } = useTrialContext();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (accountStatus === "waitlisted") {
+    return <WaitlistScreen />;
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
+      {/* Trial banner */}
+      {accountStatus === "trial" && <TrialBanner />}
+
       {/* Mobile top bar */}
       {isMobile && (
         <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4">

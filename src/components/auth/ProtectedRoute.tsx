@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { TrialProvider } from "@/contexts/TrialContext";
 import type { Session } from "@supabase/supabase-js";
 
 export default function ProtectedRoute() {
@@ -24,5 +25,9 @@ export default function ProtectedRoute() {
 
   if (!session) return <Navigate to="/auth" replace />;
 
-  return <Outlet />;
+  return (
+    <TrialProvider>
+      <Outlet />
+    </TrialProvider>
+  );
 }
