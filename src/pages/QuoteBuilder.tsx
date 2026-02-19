@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Download, Plus, Trash2, Eye } from "lucide-react";
+import { Download, Plus, Trash2, Eye, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +53,7 @@ export default function QuoteBuilder() {
   });
 
   const [labourConfig, setLabourConfig] = useState<LabourConfig>(DEFAULT_LABOUR_CONFIG);
+  const [isSending, setIsSending] = useState(false);
 
   // Load saved labour defaults from profile on mount
   useEffect(() => {
@@ -206,6 +207,40 @@ export default function QuoteBuilder() {
     window.open(URL.createObjectURL(blob), "_blank");
   };
 
+  const handleSendToClient = async () => {
+    if (!quote.clientEmail) {
+      toast({ title: "Client email is required", variant: "destructive" });
+      return;
+    }
+    const data = buildExportData();
+    if (data.items.length === 0) {
+      toast({ title: "Add at least one line item", variant: "destructive" });
+      return;
+    }
+    setIsSending(true);
+    try {
+      const doc = generateQuotePdf(data);
+      const pdfBase64 = doc.output("datauristring").split(",")[1];
+      const { data: result, error } = await supabase.functions.invoke("send-quote", {
+        body: {
+          to: quote.clientEmail,
+          subject: `Quote ${quote.quoteNumber} from ${quote.businessName || "us"}`,
+          businessName: quote.businessName,
+          quoteNumber: quote.quoteNumber,
+          clientName: quote.clientName,
+          pdfBase64,
+        },
+      });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+      toast({ title: "Quote sent!", description: `Email delivered to ${quote.clientEmail}` });
+    } catch (err: any) {
+      toast({ title: "Failed to send", description: err.message, variant: "destructive" });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <div className="p-6 md:p-8 max-w-5xl">
       {/* Header */}
@@ -220,6 +255,10 @@ export default function QuoteBuilder() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={handlePreview}>
             <Eye className="mr-2 h-4 w-4" /> Preview
+          </Button>
+          <Button variant="outline" onClick={handleSendToClient} disabled={isSending || !quote.clientEmail}>
+            {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+            Send to Client
           </Button>
           <Button className="gradient-kindai border-0 font-semibold" onClick={handleExportPdf}>
             <Download className="mr-2 h-4 w-4" /> Export PDF
