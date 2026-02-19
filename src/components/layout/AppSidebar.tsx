@@ -16,7 +16,7 @@ const navItems = [
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ onNavClick }: { onNavClick?: () => void } = {}) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -48,6 +48,7 @@ export function AppSidebar() {
             <Link
               key={item.path}
               to={item.path}
+              onClick={onNavClick}
               className={cn(
                 "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 active
