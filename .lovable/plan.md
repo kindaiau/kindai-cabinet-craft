@@ -1,23 +1,48 @@
 
+# Mobile Optimization Plan
 
-## Landing Page Changes
+## Problem
+The app is nearly unusable on mobile because the 256px-wide sidebar is always visible, leaving barely any room for content. Additionally, page content needs tighter spacing on small screens.
 
-### 1. Remove Rainbow Navigation Row
-Remove the second row of the header (the centered nav links with rainbow-colored letters and the "Log in" button) from `src/pages/Landing.tsx`. The top row with logo and "Get Started" button stays.
+## What Changes
 
-Specifically, remove:
-- The `navItems` array
-- The `rainbowText` helper function
-- The entire `<nav>` element (second row with "Upload Plans", "Take-Off", "Pricing", "Estimates", "Log in")
+### 1. Collapsible Mobile Navigation
+- On screens smaller than 768px, the sidebar will be **hidden by default**
+- A **hamburger menu button** will appear in a slim top header bar showing the Kindai logo
+- Tapping it opens the sidebar as a **slide-over Sheet** (overlay) from the left
+- Tapping any nav link automatically closes the sheet
+- On desktop (768px+), the sidebar stays exactly as it is today -- no changes
 
-### 2. Keep "How It Works" Section
-The existing "How It Works" section stays as-is on the landing page.
+### 2. AppLayout Update
+- Add a **mobile top bar** (visible only on small screens) with the logo and a menu toggle button
+- The main content area gets proper mobile padding
 
-### Technical Details
+### 3. Dashboard Touch-Friendly Tweaks
+- Project cards stack in a **single column** on mobile instead of a 2-3 column grid
+- Search bar goes **full width** on mobile
+- Slightly larger tap targets for the delete button
 
-Only `src/pages/Landing.tsx` needs to be modified:
-- Delete the `navItems` array (lines ~28-33)
-- Delete the `rainbowText` helper function (lines ~20-26)
-- Delete the `<nav>` block inside the header (the second row with centered links)
-- The `safelist` in `tailwind.config.ts` stays since the How It Works section still uses dynamic classes
+### 4. Other Pages
+- QuoteBuilder, Settings, Upload Plans, and ProjectDetail already use reasonable layouts but will benefit from the sidebar fix since they'll now get the full screen width on mobile
 
+---
+
+## Technical Details
+
+**Files to modify:**
+
+1. **`src/components/layout/AppLayout.tsx`**
+   - Import `useIsMobile`, `Sheet`/`SheetContent` components, and state for open/close
+   - On mobile: render a top bar with hamburger + logo, wrap `AppSidebar` inside a `Sheet` (side="left")
+   - On desktop: render sidebar inline as before
+
+2. **`src/components/layout/AppSidebar.tsx`**
+   - Accept an optional `onNavClick` callback prop
+   - Call `onNavClick` when any nav link is clicked (so the sheet closes on mobile)
+   - No visual changes to the sidebar itself
+
+3. **`src/pages/Dashboard.tsx`**
+   - Change project grid from `sm:grid-cols-2 lg:grid-cols-3` to `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
+   - Make search input full width on mobile (`max-w-full md:max-w-md`)
+
+No new dependencies required. Uses the existing `Sheet` component and `useIsMobile` hook already in the project.
