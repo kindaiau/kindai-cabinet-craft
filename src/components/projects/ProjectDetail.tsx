@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, FileImage, MapPin, User, Mail, Phone, StickyNote, Unlink, Package, Sparkles, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, FileImage, MapPin, User, Mail, Phone, StickyNote, Unlink, Package, Sparkles, Loader2, Trash2, Upload } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +59,7 @@ interface Props {
 
 export default function ProjectDetail({ project, onBack }: Props) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch plans (all + linked to this project)
   const { data: allPlans = [] } = useQuery({
@@ -223,7 +225,12 @@ export default function ProjectDetail({ project, onBack }: Props) {
         </CardHeader>
         <CardContent>
           {linkedPlans.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No plans linked to this project yet.</p>
+            <div className="flex flex-col items-start gap-3">
+              <p className="text-sm text-muted-foreground">No plans linked to this project yet.</p>
+              <Button size="sm" variant="outline" onClick={() => navigate("/upload")}>
+                <Upload className="h-3.5 w-3.5 mr-1" /> Upload Plans
+              </Button>
+            </div>
           ) : (
             <div className="space-y-2">
               {linkedPlans.map((plan) => (
