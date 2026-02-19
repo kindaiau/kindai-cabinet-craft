@@ -96,7 +96,7 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <div className="relative mt-6 max-w-md">
+      <div className="relative mt-6 max-w-full md:max-w-md">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search projects..."
@@ -127,7 +127,7 @@ export default function Dashboard() {
       ) : filtered.length === 0 ? (
         <p className="mt-8 text-center text-muted-foreground">No projects match "{search}"</p>
       ) : (
-        <div className="relative mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="relative mt-6 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((project) => (
             <Card
               key={project.id}
