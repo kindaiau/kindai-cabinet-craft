@@ -177,6 +177,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: string
           business_name: string | null
           created_at: string
           default_waste_factor: number | null
@@ -192,10 +193,12 @@ export type Database = {
           labour_method: string
           location: string | null
           trade_type: string | null
+          trial_started_at: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          account_status?: string
           business_name?: string | null
           created_at?: string
           default_waste_factor?: number | null
@@ -211,10 +214,12 @@ export type Database = {
           labour_method?: string
           location?: string | null
           trade_type?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          account_status?: string
           business_name?: string | null
           created_at?: string
           default_waste_factor?: number | null
@@ -230,6 +235,7 @@ export type Database = {
           labour_method?: string
           location?: string | null
           trade_type?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           user_id?: string
         }
