@@ -67,7 +67,7 @@ export default function MaterialTakeoff() {
   // No analyzed plans
   if (!isLoading && plans.length === 0) {
     return (
-      <div className="p-6 md:p-8">
+      <div className="p-6 md:p-8" data-theme="operator">
         <h1 className="font-display text-3xl font-bold">Material Take-Off</h1>
         <p className="mt-1 text-muted-foreground">Review and calculate materials from your plans</p>
         <div className="mt-16 flex flex-col items-center justify-center text-center">
@@ -89,7 +89,7 @@ export default function MaterialTakeoff() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl">
+    <div className="p-6 md:p-8 max-w-5xl" data-theme="operator">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold">Material Take-Off</h1>

@@ -30,6 +30,14 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
+      {/* Skip navigation – screen reader / keyboard shortcut */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:rounded focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
       {/* Trial banner */}
       {accountStatus === "trial" && <TrialBanner />}
 
@@ -60,7 +68,7 @@ export function AppLayout() {
           </Sheet>
         )}
 
-        <main className="flex-1 overflow-y-auto">
+        <main id="main-content" className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </div>

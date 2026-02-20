@@ -175,6 +175,10 @@
 }
 
 @layer utilities {
+  .gradient-kindai {
+    background: linear-gradient(135deg, hsl(var(--kindai-aqua)), hsl(var(--kindai-violet)));
+  }
+
   .gradient-rebel {
     background: linear-gradient(135deg, hsl(var(--kindai-pink)), hsl(var(--kindai-orange)), hsl(var(--kindai-yellow)));
   }

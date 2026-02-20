@@ -72,7 +72,7 @@ export default function Pricing() {
     SUPPLIERS.find((s) => s.slug === slug)?.color || "bg-muted text-muted-foreground";
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl">
+    <div className="p-6 md:p-8 max-w-5xl" data-theme="operator">
       <h1 className="font-display text-3xl font-bold">Live Pricing</h1>
       <p className="mt-1 text-muted-foreground">
         Compare supplier pricing across Bunnings, Polytec &amp; Laminex
