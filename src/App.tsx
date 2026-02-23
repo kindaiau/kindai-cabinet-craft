@@ -15,6 +15,7 @@ import Estimates from "./pages/Estimates";
 import QuoteBuilder from "./pages/QuoteBuilder";
 import MaterialsLibrary from "./pages/MaterialsLibrary";
 import SettingsPage from "./pages/SettingsPage";
+import SecurityTools from "./pages/SecurityTools";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/estimates" element={<Estimates />} />
             <Route path="/quotes" element={<QuoteBuilder />} />
             <Route path="/materials" element={<MaterialsLibrary />} />
+            <Route path="/security" element={<SecurityTools />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           </Route>
