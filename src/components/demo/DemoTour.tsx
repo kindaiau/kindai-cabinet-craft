@@ -75,45 +75,48 @@ export function DemoTour() {
     }
   };
 
-  if (!tourActive || !step || !tooltipPos) return null;
+  if (!tourActive || !step) return null;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        key={tourStep}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="fixed z-[100] w-72 rounded-xl border border-primary/30 bg-card p-4 shadow-[0_0_40px_hsl(var(--primary)/0.2)]"
-        style={{ top: tooltipPos.top, left: tooltipPos.left, transform: step.position === "right" ? "translateY(-50%)" : step.position === "bottom" ? "translateX(-50%)" : "translateY(-50%)" }}
-      >
-        {/* Arrow */}
-        {step.position === "right" && (
-          <div className="absolute -left-2 top-1/2 -translate-y-1/2 h-4 w-4 rotate-45 border-l border-b border-primary/30 bg-card" />
-        )}
+    <AnimatePresence mode="wait">
+      {tooltipPos && (
+        <motion.div
+          key={tourStep}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          transition={{ duration: 0.2 }}
+          className="fixed z-[100] w-72 rounded-xl border border-primary/30 bg-card p-4 shadow-[0_0_40px_hsl(var(--primary)/0.2)]"
+          style={{ top: tooltipPos.top, left: tooltipPos.left, transform: step.position === "right" ? "translateY(-50%)" : step.position === "bottom" ? "translateX(-50%)" : "translateY(-50%)" }}
+        >
+          {/* Arrow */}
+          {step.position === "right" && (
+            <div className="absolute -left-2 top-1/2 -translate-y-1/2 h-4 w-4 rotate-45 border-l border-b border-primary/30 bg-card" />
+          )}
 
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider">
-            <Sparkles className="h-3 w-3" />
-            Step {tourStep + 1} of {TOUR_STEPS.length}
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider">
+              <Sparkles className="h-3 w-3" />
+              Step {tourStep + 1} of {TOUR_STEPS.length}
+            </div>
+            <button onClick={() => setTourActive(false)} className="text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <button onClick={() => setTourActive(false)} className="text-muted-foreground hover:text-foreground">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
 
-        <h4 className="mt-2 font-display font-semibold">{step.title}</h4>
-        <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{step.content}</p>
+          <h4 className="mt-2 font-display font-semibold">{step.title}</h4>
+          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{step.content}</p>
 
-        <div className="mt-4 flex items-center justify-between">
-          <Button size="sm" variant="ghost" onClick={goPrev} disabled={tourStep === 0} className="h-7 text-xs">
-            <ArrowLeft className="h-3 w-3 mr-1" /> Back
-          </Button>
-          <Button size="sm" onClick={goNext} className="h-7 text-xs gradient-kindai border-0 font-semibold">
-            {tourStep === TOUR_STEPS.length - 1 ? "Finish" : "Next"} <ArrowRight className="h-3 w-3 ml-1" />
-          </Button>
-        </div>
-      </motion.div>
+          <div className="mt-4 flex items-center justify-between">
+            <Button size="sm" variant="ghost" onClick={goPrev} disabled={tourStep === 0} className="h-7 text-xs">
+              <ArrowLeft className="h-3 w-3 mr-1" /> Back
+            </Button>
+            <Button size="sm" onClick={goNext} className="h-7 text-xs gradient-kindai border-0 font-semibold">
+              {tourStep === TOUR_STEPS.length - 1 ? "Finish" : "Next"} <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 }

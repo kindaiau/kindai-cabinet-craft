@@ -1,4 +1,5 @@
 import { Outlet } from "react-router-dom";
+import { Suspense } from "react";
 import { DemoProvider } from "@/contexts/DemoContext";
 import { DemoBanner } from "@/components/demo/DemoBanner";
 import { DemoSidebar } from "@/components/layout/DemoSidebar";
@@ -45,7 +46,9 @@ export function DemoLayout() {
           )}
 
           <main className="flex-1 overflow-y-auto">
-            <Outlet />
+            <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
+              <Outlet />
+            </Suspense>
           </main>
         </div>
 
