@@ -11,30 +11,84 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { planId } = await req.json();
-    if (!planId) throw new Error("planId is required");
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    // --- Authentication ---
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Get the plan record
-    const { data: plan, error: planError } = await supabase
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = claimsData.claims.sub;
+
+    // --- Input Validation ---
+    const body = await req.json();
+    const planId = body?.planId;
+    if (!planId || typeof planId !== "string") {
+      return new Response(JSON.stringify({ error: "planId is required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // UUID format check
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(planId)) {
+      return new Response(JSON.stringify({ error: "Invalid planId format" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Fetch plan with RLS (user can only access own plans) ---
+    const { data: plan, error: planError } = await userClient
       .from("plans")
       .select("*")
       .eq("id", planId)
       .single();
 
-    if (planError || !plan) throw new Error("Plan not found");
+    if (planError || !plan) {
+      return new Response(JSON.stringify({ error: "Plan not found or access denied" }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Validate file type and size ---
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "application/pdf"];
+    if (!allowedTypes.includes(plan.file_type)) {
+      return new Response(JSON.stringify({ error: "Unsupported file type" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (plan.file_size > 10 * 1024 * 1024) {
+      return new Response(JSON.stringify({ error: "File too large for analysis (max 10MB)" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    // Use service role only for storage operations and status updates
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
     // Update status to analyzing
-    await supabase.from("plans").update({ status: "analyzing" }).eq("id", planId);
+    await adminClient.from("plans").update({ status: "analyzing" }).eq("id", planId).eq("user_id", userId);
 
     // Get a signed URL for the file
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+    const { data: signedUrlData, error: signedUrlError } = await adminClient.storage
       .from("plans")
       .createSignedUrl(plan.file_path, 300);
 
@@ -96,14 +150,8 @@ Australian standard depths: Base 560mm, Wall 300mm, Tall 560mm. Standard heights
               parameters: {
                 type: "object",
                 properties: {
-                  summary: {
-                    type: "string",
-                    description: "Brief summary of what the plan shows (e.g. 'Kitchen floor plan with L-shaped layout')"
-                  },
-                  room_type: {
-                    type: "string",
-                    enum: ["kitchen", "bathroom", "laundry", "wardrobe", "office", "other"]
-                  },
+                  summary: { type: "string", description: "Brief summary of what the plan shows" },
+                  room_type: { type: "string", enum: ["kitchen", "bathroom", "laundry", "wardrobe", "office", "other"] },
                   cabinets: {
                     type: "array",
                     items: {
@@ -114,10 +162,7 @@ Australian standard depths: Base 560mm, Wall 300mm, Tall 560mm. Standard heights
                         width_mm: { type: "number" },
                         height_mm: { type: "number" },
                         depth_mm: { type: "number" },
-                        features: {
-                          type: "array",
-                          items: { type: "string" }
-                        },
+                        features: { type: "array", items: { type: "string" } },
                         door_count: { type: "number" },
                         drawer_count: { type: "number" },
                         shelf_count: { type: "number" }
@@ -143,31 +188,29 @@ Australian standard depths: Base 560mm, Wall 300mm, Tall 560mm. Standard heights
       console.error("AI gateway error:", aiResponse.status, errorText);
 
       if (aiResponse.status === 429) {
-        await supabase.from("plans").update({ status: "error", analysis: { error: "Rate limited, please try again later" } }).eq("id", planId);
+        await adminClient.from("plans").update({ status: "error", analysis: { error: "Rate limited, please try again later" } }).eq("id", planId).eq("user_id", userId);
         return new Response(JSON.stringify({ error: "Rate limited, please try again later" }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
       if (aiResponse.status === 402) {
-        await supabase.from("plans").update({ status: "error", analysis: { error: "AI credits exhausted" } }).eq("id", planId);
+        await adminClient.from("plans").update({ status: "error", analysis: { error: "AI credits exhausted" } }).eq("id", planId).eq("user_id", userId);
         return new Response(JSON.stringify({ error: "AI credits exhausted" }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
 
-      await supabase.from("plans").update({ status: "error", analysis: { error: "AI analysis failed" } }).eq("id", planId);
+      await adminClient.from("plans").update({ status: "error", analysis: { error: "AI analysis failed" } }).eq("id", planId).eq("user_id", userId);
       throw new Error("AI analysis failed");
     }
 
     const aiData = await aiResponse.json();
     let analysis;
 
-    // Extract from tool call response
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
       analysis = JSON.parse(toolCall.function.arguments);
     } else {
-      // Fallback: try to parse from content
       const content = aiData.choices?.[0]?.message?.content || "";
       try {
         analysis = JSON.parse(content);
@@ -176,11 +219,10 @@ Australian standard depths: Base 560mm, Wall 300mm, Tall 560mm. Standard heights
       }
     }
 
-    // Update plan with analysis
-    await supabase.from("plans").update({
+    await adminClient.from("plans").update({
       status: "analyzed",
       analysis
-    }).eq("id", planId);
+    }).eq("id", planId).eq("user_id", userId);
 
     return new Response(JSON.stringify({ success: true, analysis }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -188,7 +230,7 @@ Australian standard depths: Base 560mm, Wall 300mm, Tall 560mm. Standard heights
 
   } catch (e) {
     console.error("analyze-plan error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "An error occurred during analysis" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }

@@ -1,9 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface SupplierConfig {
@@ -11,6 +12,8 @@ interface SupplierConfig {
   slug: string;
   searchUrl: (query: string) => string;
 }
+
+const ALLOWED_SUPPLIER_SLUGS = ["bunnings", "polytec", "laminex"] as const;
 
 const SUPPLIERS: SupplierConfig[] = [
   {
@@ -36,12 +39,69 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query, suppliers } = await req.json();
-    if (!query) {
+    // --- Authentication ---
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Input Validation ---
+    const body = await req.json();
+    const { query, suppliers } = body;
+
+    if (!query || typeof query !== "string") {
       return new Response(
         JSON.stringify({ success: false, error: "Query is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    if (query.length > 200) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Query too long (max 200 characters)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Only allow alphanumeric, spaces, hyphens, and common punctuation
+    if (!/^[a-zA-Z0-9\s\-_.,'&()]+$/.test(query)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Query contains invalid characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate suppliers array if provided
+    if (suppliers !== undefined && suppliers !== null) {
+      if (!Array.isArray(suppliers)) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Suppliers must be an array" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const invalidSuppliers = suppliers.filter((s: unknown) => !ALLOWED_SUPPLIER_SLUGS.includes(s as any));
+      if (invalidSuppliers.length > 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: `Invalid suppliers: ${invalidSuppliers.join(", ")}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const apiKey = Deno.env.get("FIRECRAWL_API_KEY");
@@ -58,7 +118,6 @@ Deno.serve(async (req) => {
 
     console.log(`Fetching pricing for "${query}" from ${selectedSuppliers.map((s) => s.name).join(", ")}`);
 
-    // Scrape all suppliers in parallel
     const results = await Promise.allSettled(
       selectedSuppliers.map(async (supplier) => {
         const url = supplier.searchUrl(query);
@@ -134,7 +193,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Error fetching pricing:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ success: false, error: "An error occurred while fetching pricing" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

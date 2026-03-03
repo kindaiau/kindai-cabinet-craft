@@ -1,1 +1,10 @@
 project_id = "gonyqkmnpmfgvnyyabjz"
+
+[functions.analyze-plan]
+verify_jwt = false
+
+[functions.fetch-supplier-pricing]
+verify_jwt = false
+
+[functions.send-quote]
+verify_jwt = false
