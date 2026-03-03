@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { ArrowRight, Upload, Calculator, DollarSign, Zap, FileUp, Cpu, BarChart3, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import kindaiLogo from "@/assets/kindai-logo.png";
@@ -77,7 +76,7 @@ export default function Landing() {
       </header>
 
       <section className="relative flex flex-col items-center px-6 pt-20 pb-16 text-center md:pt-32 md:pb-24 overflow-hidden">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative max-w-3xl">
+        <div className="relative max-w-3xl">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
             <Zap className="h-3.5 w-3.5" /> Built for Australian Cabinet Makers
           </div>
@@ -94,17 +93,17 @@ export default function Landing() {
               </Button>
             </Link>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       <section className="px-6 pb-20 md:px-12">
         <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
           {features.map((f, i) => (
-            <motion.div key={f.title} id={f.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 * i }} className="group rounded-2xl border border-border bg-card p-6 transition-all hover:border-primary/40">
+            <div key={f.title} id={f.id} className="group rounded-2xl border border-border bg-card p-6 transition-all hover:border-primary/40">
               <div className={`mb-4 inline-flex rounded-xl p-3 ${f.color} ring-1 ring-current/20`}><f.icon className="h-6 w-6" /></div>
               <h3 className="font-display text-lg font-semibold">{f.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.description}</p>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>
@@ -144,12 +143,12 @@ export default function Landing() {
               { step: "03", icon: BarChart3, title: "Take-Off", desc: "Materials and quantities are calculated." },
               { step: "04", icon: FileText, title: "Quote", desc: "Get supplier-priced estimate outputs fast." },
             ].map((item, i) => (
-              <motion.div key={item.step} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.15 * i }} className="text-center">
+              <div key={item.step} className="text-center">
                 <div className="mb-3 text-xs font-bold tracking-widest text-primary">STEP {item.step}</div>
                 <div className="mb-4 flex h-16 w-16 mx-auto items-center justify-center rounded-xl bg-primary/10"><item.icon className="h-7 w-7 text-primary" /></div>
                 <h3 className="font-display text-lg font-semibold">{item.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{item.desc}</p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
