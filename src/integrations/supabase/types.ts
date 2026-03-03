@@ -181,6 +181,7 @@ export type Database = {
           business_name: string | null
           created_at: string
           default_waste_factor: number | null
+          demo_started_at: string | null
           fab_hourly_rate: number
           fab_hours_per_unit: Json
           fab_per_lm: number
@@ -202,6 +203,7 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           default_waste_factor?: number | null
+          demo_started_at?: string | null
           fab_hourly_rate?: number
           fab_hours_per_unit?: Json
           fab_per_lm?: number
@@ -223,6 +225,7 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           default_waste_factor?: number | null
+          demo_started_at?: string | null
           fab_hourly_rate?: number
           fab_hours_per_unit?: Json
           fab_per_lm?: number
@@ -280,6 +283,48 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      waitlist: {
+        Row: {
+          business_name: string
+          contact_name: string
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          notes: string | null
+          phone: string | null
+          status: string
+          trade_type: string
+          updated_at: string
+        }
+        Insert: {
+          business_name: string
+          contact_name: string
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          trade_type?: string
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string
+          contact_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          trade_type?: string
+          updated_at?: string
         }
         Relationships: []
       }
