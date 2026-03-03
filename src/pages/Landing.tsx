@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Upload, Calculator, DollarSign, Zap, FileUp, Cpu, BarChart3, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import kindaiLogo from "@/assets/kindai-logo.png";
+import kindaiLogo from "@/assets/kindai-logo.webp";
 
 const kindaiColors = [
   "hsl(316, 100%, 64%)",  // pink
@@ -53,7 +53,7 @@ export default function Landing() {
       <header className="px-6 py-4 md:px-12">
         {/* Top row: Logo left, Get Started right */}
         <div className="flex items-center justify-between">
-          <img src={kindaiLogo} alt="Kindai" className="h-12 w-12 rounded-lg" />
+          <img src={kindaiLogo} alt="Kindai" className="h-12 w-12 rounded-lg" width={48} height={48} />
           <Link to="/auth?signup=true">
             <Button className="gradient-kindai border-0 font-semibold">
               Get Started <ArrowRight className="ml-1 h-4 w-4" />

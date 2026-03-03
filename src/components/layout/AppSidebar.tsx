@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Upload, Calculator, DollarSign, FileText, FilePen, Package, Settings, LogOut, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
-import kindaiLogo from "@/assets/kindai-logo.png";
+import kindaiLogo from "@/assets/kindai-logo.webp";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
@@ -34,7 +34,7 @@ export function AppSidebar({ onNavClick }: { onNavClick?: () => void } = {}) {
       {/* Logo */}
       <div className="relative flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
         <div className="rounded-lg p-0.5 shadow-[0_0_12px_hsl(var(--primary)/0.3)]">
-          <img src={kindaiLogo} alt="Kindai" className="h-8 w-8 rounded-lg" />
+          <img src={kindaiLogo} alt="Kindai" className="h-8 w-8 rounded-lg" width={32} height={32} />
         </div>
         <span className="font-display text-xl font-bold tracking-tight text-gradient-kindai">
           Kindai
