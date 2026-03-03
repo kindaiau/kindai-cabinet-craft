@@ -53,6 +53,7 @@ export default function QuoteBuilder() {
   });
 
   const [labourConfig, setLabourConfig] = useState<LabourConfig>(DEFAULT_LABOUR_CONFIG);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   // Load saved labour defaults from profile on mount
   useEffect(() => {
@@ -184,26 +185,38 @@ export default function QuoteBuilder() {
     return { ...quote, items: [...quote.items.filter((i) => i.description), ...labourItems] };
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     const data = buildExportData();
     if (data.items.length === 0) {
       toast({ title: "Add at least one line item", variant: "destructive" });
       return;
     }
-    const doc = generateQuotePdf(data);
-    doc.save(`${quote.quoteNumber}.pdf`);
-    toast({ title: "PDF downloaded!", description: `${quote.quoteNumber}.pdf saved.` });
+
+    try {
+      setPdfLoading(true);
+      const doc = await generateQuotePdf(data);
+      doc.save(`${quote.quoteNumber}.pdf`);
+      toast({ title: "PDF downloaded!", description: `${quote.quoteNumber}.pdf saved.` });
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
     const data = buildExportData();
     if (data.items.length === 0) {
       toast({ title: "Add at least one line item", variant: "destructive" });
       return;
     }
-    const doc = generateQuotePdf(data);
-    const blob = doc.output("blob");
-    window.open(URL.createObjectURL(blob), "_blank");
+
+    try {
+      setPdfLoading(true);
+      const doc = await generateQuotePdf(data);
+      const blob = doc.output("blob");
+      window.open(URL.createObjectURL(blob), "_blank");
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   return (
@@ -218,11 +231,11 @@ export default function QuoteBuilder() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handlePreview}>
-            <Eye className="mr-2 h-4 w-4" /> Preview
+          <Button variant="outline" onClick={handlePreview} disabled={pdfLoading}>
+            <Eye className="mr-2 h-4 w-4" /> {pdfLoading ? "Preparing..." : "Preview"}
           </Button>
-          <Button className="gradient-kindai border-0 font-semibold" onClick={handleExportPdf}>
-            <Download className="mr-2 h-4 w-4" /> Export PDF
+          <Button className="gradient-kindai border-0 font-semibold" onClick={handleExportPdf} disabled={pdfLoading}>
+            <Download className="mr-2 h-4 w-4" /> {pdfLoading ? "Preparing..." : "Export PDF"}
           </Button>
         </div>
       </div>
