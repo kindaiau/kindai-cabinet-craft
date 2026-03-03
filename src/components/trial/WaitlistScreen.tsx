@@ -2,7 +2,7 @@ import { useTrialContext } from "@/contexts/TrialContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Clock, LogOut, Mail } from "lucide-react";
-import kindaiLogo from "@/assets/kindai-logo.png";
+import kindaiLogo from "@/assets/kindai-logo.webp";
 
 export function WaitlistScreen() {
   const { userEmail } = useTrialContext();
@@ -14,7 +14,7 @@ export function WaitlistScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="mx-auto max-w-md text-center">
-        <img src={kindaiLogo} alt="Kindai" className="mx-auto mb-8 h-16 w-16 rounded-2xl" />
+        <img src={kindaiLogo} alt="Kindai" className="mx-auto mb-8 h-16 w-16 rounded-2xl" width={64} height={64} />
 
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
           <Clock className="h-4 w-4" />

@@ -5,7 +5,7 @@ import { AppSidebar } from "./AppSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import kindaiLogo from "@/assets/kindai-logo.png";
+import kindaiLogo from "@/assets/kindai-logo.webp";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useTrialContext } from "@/contexts/TrialContext";
 import { TrialBanner } from "@/components/trial/TrialBanner";
@@ -40,7 +40,7 @@ export function AppLayout() {
             <Menu className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <img src={kindaiLogo} alt="Kindai" className="h-7 w-7 rounded-lg" />
+            <img src={kindaiLogo} alt="Kindai" className="h-7 w-7 rounded-lg" width={28} height={28} />
             <span className="font-display text-lg font-bold tracking-tight text-gradient-kindai">Kindai</span>
           </div>
         </header>

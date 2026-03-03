@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import kindaiLogo from "@/assets/kindai-logo.png";
+import kindaiLogo from "@/assets/kindai-logo.webp";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -67,7 +67,7 @@ export default function Auth() {
       <Card className="relative w-full max-w-md border-border/50">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex items-center gap-3">
-            <img src={kindaiLogo} alt="Kindai" className="h-10 w-10 rounded-lg" />
+            <img src={kindaiLogo} alt="Kindai" className="h-10 w-10 rounded-lg" width={40} height={40} />
             <span className="font-display text-2xl font-bold text-gradient-kindai">Kindai</span>
           </div>
           <CardTitle className="font-display text-xl">
