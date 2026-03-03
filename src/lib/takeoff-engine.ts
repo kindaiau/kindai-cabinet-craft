@@ -124,7 +124,7 @@ export function calculateTakeoff(
     // Front edges of shelves + top/bottom exposed edges
     const shelfEdge = shelves * w * 2; // front + back
     const carcassEdge = (w + d) * 2; // top/bottom exposed
-    const doorEdge = doors * (w / doors + h) * 2; // each door perimeter approx
+    const doorEdge = doors > 0 ? doors * (w / doors + h) * 2 : 0; // each door perimeter approx
     totalEdge_mm += shelfEdge + carcassEdge + doorEdge;
 
     // --- Hardware ---
