@@ -3,14 +3,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDemo, TOUR_STEPS } from "@/contexts/DemoContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const tourRoutes = ["/demo", "/demo/upload", "/demo/takeoff", "/demo/quotes"];
 
 export function DemoTour() {
   const { tourStep, setTourStep, tourActive, setTourActive } = useDemo();
   const navigate = useNavigate();
+  const location = useLocation();
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+
+  // Sync tour step with current route
+  useEffect(() => {
+    const routeIndex = tourRoutes.indexOf(location.pathname);
+    if (routeIndex !== -1 && routeIndex !== tourStep) {
+      setTourStep(routeIndex);
+    }
+  }, [location.pathname, setTourStep]);
+
   const step = TOUR_STEPS[tourStep];
 
   const updatePosition = useCallback(() => {
