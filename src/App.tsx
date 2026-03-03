@@ -21,6 +21,13 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const SecurityTools = lazy(() => import("./pages/SecurityTools"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+// Demo routes
+const DemoLayout = lazy(() => import("./components/layout/DemoLayout").then(m => ({ default: m.DemoLayout })));
+const DemoDashboard = lazy(() => import("./pages/demo/DemoDashboard"));
+const DemoUpload = lazy(() => import("./pages/demo/DemoUpload"));
+const DemoTakeoff = lazy(() => import("./pages/demo/DemoTakeoff"));
+const DemoQuotes = lazy(() => import("./pages/demo/DemoQuotes"));
+
 const queryClient = new QueryClient();
 
 const PageLoader = () => (
@@ -51,6 +58,13 @@ const App = () => (
                 <Route path="/security" element={<SecurityTools />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
+            </Route>
+            {/* Demo routes — no auth required */}
+            <Route path="/demo" element={<DemoLayout />}>
+              <Route index element={<DemoDashboard />} />
+              <Route path="upload" element={<DemoUpload />} />
+              <Route path="takeoff" element={<DemoTakeoff />} />
+              <Route path="quotes" element={<DemoQuotes />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
