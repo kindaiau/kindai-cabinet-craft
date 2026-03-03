@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import kindaiLogo from "@/assets/kindai-logo.png";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -37,6 +38,7 @@ export default function Auth() {
 
     try {
       if (isSignup) {
+        trackEvent("signup_started", { source: "auth" });
         const { error } = await supabase.auth.signUp({
           email,
           password,

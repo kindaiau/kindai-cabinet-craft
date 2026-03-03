@@ -1,10 +1,15 @@
+import { useEffect } from "react";
 import { FileText } from "lucide-react";
 
 import { AssumptionBlock } from "@/components/trust/AssumptionBlock";
 import { ConfidenceChip } from "@/components/trust/ConfidenceChip";
 import { ReviewGateBanner } from "@/components/trust/ReviewGateBanner";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Estimates() {
+  useEffect(() => {
+    trackEvent("first_estimate", { source: "estimates_page" });
+  }, []);
   return (
     <div className="p-6 md:p-8" data-theme="operator">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

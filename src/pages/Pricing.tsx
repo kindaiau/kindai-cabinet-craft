@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 interface Product {
   name: string;
@@ -57,6 +58,7 @@ export default function Pricing() {
     onSuccess: (data) => {
       setResults(data);
       const total = data.reduce((sum, s) => sum + s.products.length, 0);
+      trackEvent("checkout_completed", { source: "pricing_compare", productsFound: total });
       toast.success(`Found ${total} products across ${data.length} suppliers`);
     },
     onError: (err) => {

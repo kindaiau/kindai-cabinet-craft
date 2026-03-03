@@ -15,6 +15,8 @@ import Estimates from "./pages/Estimates";
 import QuoteBuilder from "./pages/QuoteBuilder";
 import MaterialsLibrary from "./pages/MaterialsLibrary";
 import SettingsPage from "./pages/SettingsPage";
+import RequestAccess from "./pages/RequestAccess";
+import AccessRequested from "./pages/AccessRequested";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/request-access" element={<RequestAccess />} />
+          <Route path="/access-requested" element={<AccessRequested />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
