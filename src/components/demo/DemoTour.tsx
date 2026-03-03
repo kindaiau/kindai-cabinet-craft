@@ -4,6 +4,7 @@ import { X, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDemo, TOUR_STEPS } from "@/contexts/DemoContext";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const tourRoutes = ["/demo", "/demo/upload", "/demo/takeoff", "/demo/quotes"];
 
@@ -11,6 +12,7 @@ export function DemoTour() {
   const { tourStep, setTourStep, tourActive, setTourActive } = useDemo();
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
 
   // Sync tour step with current route
@@ -25,6 +27,11 @@ export function DemoTour() {
 
   const updatePosition = useCallback(() => {
     if (!tourActive || !step) return;
+    if (isMobile) {
+      // On mobile, we don't anchor to sidebar elements
+      setTooltipPos({ top: 0, left: 0 });
+      return;
+    }
     const el = document.querySelector(step.target);
     if (!el) { setTooltipPos(null); return; }
     const rect = el.getBoundingClientRect();
@@ -49,7 +56,7 @@ export function DemoTour() {
         break;
     }
     setTooltipPos(pos);
-  }, [tourActive, step]);
+  }, [tourActive, step, isMobile]);
 
   useEffect(() => {
     updatePosition();
@@ -77,6 +84,45 @@ export function DemoTour() {
 
   if (!tourActive || !step) return null;
 
+  // Mobile: fixed bottom card
+  if (isMobile) {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={tourStep}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          transition={{ duration: 0.2 }}
+          className="fixed bottom-20 left-3 right-3 z-[100] rounded-xl border border-primary/30 bg-card p-4 shadow-[0_0_40px_hsl(var(--primary)/0.2)]"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider">
+              <Sparkles className="h-3 w-3" />
+              Step {tourStep + 1} of {TOUR_STEPS.length}
+            </div>
+            <button onClick={() => setTourActive(false)} className="text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <h4 className="mt-2 font-display font-semibold">{step.title}</h4>
+          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{step.content}</p>
+
+          <div className="mt-4 flex items-center justify-between">
+            <Button size="sm" variant="ghost" onClick={goPrev} disabled={tourStep === 0} className="h-7 text-xs">
+              <ArrowLeft className="h-3 w-3 mr-1" /> Back
+            </Button>
+            <Button size="sm" onClick={goNext} className="h-7 text-xs gradient-kindai border-0 font-semibold">
+              {tourStep === TOUR_STEPS.length - 1 ? "Finish" : "Next"} <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
+  // Desktop: anchored tooltip
   return (
     <AnimatePresence mode="wait">
       {tooltipPos && (
