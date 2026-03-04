@@ -232,12 +232,19 @@ export default function MaterialTakeoff() {
   );
 }
 
+const summaryColorClass: Record<string, string> = {
+  "kindai-blue": "text-kindai-blue",
+  "kindai-pink": "text-kindai-pink",
+  "kindai-aqua": "text-kindai-aqua",
+  "kindai-orange": "text-kindai-orange",
+};
+
 function SummaryCard({ label, value, unit, color }: { label: string; value: number; unit: string; color: string }) {
   return (
     <Card>
       <CardContent className="p-4">
         <p className="text-xs text-muted-foreground font-medium">{label}</p>
-        <p className={`font-display text-2xl font-bold text-${color} mt-1`}>{value}</p>
+        <p className={`font-display text-2xl font-bold mt-1 ${summaryColorClass[color] ?? "text-foreground"}`}>{value}</p>
         <p className="text-xs text-muted-foreground">{unit}</p>
       </CardContent>
     </Card>

@@ -2,6 +2,8 @@
 export const AU_SHEET = { width: 2400, height: 1200 }; // mm
 export const AU_EDGE_ROLL = 50_000; // 50m roll in mm
 
+const AU_SHEET_AREA = AU_SHEET.width * AU_SHEET.height;
+
 // Default waste factors by category (%)
 export const DEFAULT_WASTE_FACTORS: Record<string, number> = {
   carcass: 12,
@@ -46,20 +48,6 @@ export interface TakeoffResult {
   };
 }
 
-// Calculate the number of panels that fit on a single sheet
-function panelsPerSheet(panelW: number, panelH: number): number {
-  const { width: sw, height: sh } = AU_SHEET;
-  // Try both orientations
-  const option1 = Math.floor(sw / panelW) * Math.floor(sh / panelH);
-  const option2 = Math.floor(sw / panelH) * Math.floor(sh / panelW);
-  return Math.max(option1, option2, 1);
-}
-
-function sheetsNeeded(panelCount: number, panelW: number, panelH: number): number {
-  const perSheet = panelsPerSheet(panelW, panelH);
-  return Math.ceil(panelCount / perSheet);
-}
-
 function withWaste(qty: number, wastePercent: number): number {
   return Math.ceil(qty * (1 + wastePercent / 100));
 }
@@ -83,6 +71,10 @@ function addItem(
   });
 }
 
+function areaToSheets(areaMm2: number): number {
+  return Math.ceil(areaMm2 / AU_SHEET_AREA);
+}
+
 export function calculateTakeoff(
   cabinets: Cabinet[],
   wasteFactor: Partial<typeof DEFAULT_WASTE_FACTORS> = {}
@@ -90,9 +82,9 @@ export function calculateTakeoff(
   const wf = { ...DEFAULT_WASTE_FACTORS, ...wasteFactor };
   const items: TakeoffLineItem[] = [];
 
-  let totalCarcassPanels = 0;
-  let totalDoorPanels = 0;
-  let totalShelfPanels = 0;
+  let totalCarcassArea = 0;
+  let totalDoorArea = 0;
+  let totalShelfArea = 0;
   let totalEdge_mm = 0;
   let totalHinges = 0;
   let totalDrawerRunners = 0;
@@ -100,54 +92,41 @@ export function calculateTakeoff(
 
   for (const cab of cabinets) {
     const { width_mm: w, height_mm: h, depth_mm: d, type } = cab;
+
     const doors = cab.door_count ?? (type === "base" || type === "wall" ? (w > 600 ? 2 : 1) : 1);
     const drawers = cab.drawer_count ?? 0;
     const shelves = cab.shelf_count ?? (type === "wall" ? 2 : type === "tall" ? 4 : 1);
 
-    // --- Carcass panels ---
-    // 2 sides + top + bottom + back
-    const sidePanels = 2; // d × h each
-    const topBottomPanels = 2; // w × d each
-    const backPanel = 1; // w × h (usually 3mm ply but we count it)
+    // --- Carcass board area (mm²) ---
+    // 2 sides (d × h) + top/bottom (w × d) + back (w × h)
+    totalCarcassArea += 2 * d * h + 2 * w * d + w * h;
 
-    // Track panel sizes for sheet calculation
-    totalCarcassPanels += sidePanels + topBottomPanels + backPanel;
+    // --- Door + drawer front area (mm²) ---
+    const doorLeafArea = doors > 0 ? (w / doors) * h : 0;
+    const drawerFrontHeight = 180; // practical default; can be replaced by model output later
+    const drawerFrontArea = drawers > 0 ? (w / drawers) * drawerFrontHeight : 0;
+    totalDoorArea += doors * doorLeafArea + drawers * drawerFrontArea;
 
-    // --- Doors / Drawer fronts ---
-    totalDoorPanels += doors + drawers;
-
-    // --- Shelves ---
+    // --- Shelves area (mm²) ---
     totalShelves += shelves;
-    totalShelfPanels += shelves;
+    totalShelfArea += shelves * w * d;
 
-    // --- Edge banding ---
-    // Front edges of shelves + top/bottom exposed edges
+    // --- Edge banding (mm) ---
     const shelfEdge = shelves * w * 2; // front + back
-    const carcassEdge = (w + d) * 2; // top/bottom exposed
-    const doorEdge = doors * (w / doors + h) * 2; // each door perimeter approx
+    const carcassEdge = (w + d) * 2; // exposed top/bottom edges
+    const doorEdge = doors > 0 ? doors * ((w / doors + h) * 2) : 0; // door perimeters
     totalEdge_mm += shelfEdge + carcassEdge + doorEdge;
 
     // --- Hardware ---
-    // 2 hinges per door, pair of runners per drawer
     totalHinges += doors * 2;
-    totalDrawerRunners += drawers; // pairs
+    totalDrawerRunners += drawers; // one pair per drawer
   }
 
-  // Calculate sheets using average panel sizes from the cabinets
-  const avgCab = cabinets.length > 0
-    ? {
-        w: cabinets.reduce((s, c) => s + c.width_mm, 0) / cabinets.length,
-        h: cabinets.reduce((s, c) => s + c.height_mm, 0) / cabinets.length,
-        d: cabinets.reduce((s, c) => s + c.depth_mm, 0) / cabinets.length,
-      }
-    : { w: 600, h: 720, d: 560 };
-
-  const carcassSheets = sheetsNeeded(totalCarcassPanels, avgCab.d, avgCab.h);
-  const doorSheets = sheetsNeeded(totalDoorPanels, avgCab.w, avgCab.h);
-  const shelfSheets = sheetsNeeded(totalShelfPanels, avgCab.w, avgCab.d);
+  const carcassSheets = areaToSheets(totalCarcassArea);
+  const doorSheets = areaToSheets(totalDoorArea);
+  const shelfSheets = areaToSheets(totalShelfArea);
   const edgeBanding_m = Math.ceil(totalEdge_mm / 1000);
 
-  // Build line items
   addItem(items, "Carcass", "16mm White Melamine (2400×1200)", carcassSheets, "sheet", wf.carcass);
   addItem(items, "Doors & Fronts", "18mm Door Board (2400×1200)", doorSheets, "sheet", wf.doors);
   addItem(items, "Shelves", "16mm Melamine Shelf Board (2400×1200)", shelfSheets, "sheet", wf.shelves);

@@ -53,4 +53,63 @@ describe("takeoff engine", () => {
     expect(result.summary.totalEdgeBanding_m).toBeGreaterThan(0);
     expect(result.lineItems.length).toBeGreaterThan(0);
   });
+
+  it("increases sheet requirements for larger mixed-cabinet jobs", () => {
+    const small = calculateTakeoff([
+      {
+        label: "Small Base",
+        type: "base",
+        width_mm: 600,
+        height_mm: 720,
+        depth_mm: 560,
+      },
+    ]);
+
+    const mixedLarge = calculateTakeoff([
+      {
+        label: "Small Base",
+        type: "base",
+        width_mm: 600,
+        height_mm: 720,
+        depth_mm: 560,
+      },
+      {
+        label: "Tall Pantry",
+        type: "tall",
+        width_mm: 1200,
+        height_mm: 2400,
+        depth_mm: 650,
+      },
+    ]);
+
+    expect(mixedLarge.summary.totalCarcassSheets).toBeGreaterThan(small.summary.totalCarcassSheets);
+    expect(mixedLarge.summary.totalDoorSheets).toBeGreaterThanOrEqual(small.summary.totalDoorSheets);
+  });
+
+  it("respects waste factor overrides", () => {
+    const normal = calculateTakeoff([
+      {
+        label: "Base Cabinet",
+        type: "base",
+        width_mm: 600,
+        height_mm: 720,
+        depth_mm: 560,
+      },
+    ]);
+
+    const highWaste = calculateTakeoff(
+      [
+        {
+          label: "Base Cabinet",
+          type: "base",
+          width_mm: 600,
+          height_mm: 720,
+          depth_mm: 560,
+        },
+      ],
+      { carcass: 30 }
+    );
+
+    expect(highWaste.summary.totalCarcassSheets).toBeGreaterThanOrEqual(normal.summary.totalCarcassSheets);
+  });
 });
