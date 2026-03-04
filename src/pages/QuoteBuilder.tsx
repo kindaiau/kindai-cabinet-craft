@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ConfidenceChip } from "@/components/trust/ConfidenceChip";
 import { AssumptionBlock } from "@/components/trust/AssumptionBlock";
 import { ReviewGateBanner } from "@/components/trust/ReviewGateBanner";
+import { calculateQuoteTotals } from "@/lib/quote-math";
 
 const defaultItem = (): QuoteLineItem => ({
   id: crypto.randomUUID(),
@@ -145,10 +146,12 @@ export default function QuoteBuilder() {
   const subtotal = quote.items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
   const labourFab = labourBreakdown?.fabTotal ?? 0;
   const labourInstall = labourBreakdown?.installTotal ?? 0;
-  const labourTotal = labourFab + labourInstall;
-  const preGstTotal = subtotal + labourTotal;
-  const gst = preGstTotal * (quote.gstRate / 100);
-  const total = preGstTotal + gst;
+  const totals = calculateQuoteTotals({
+    materialsSubtotal: subtotal,
+    labourFab,
+    labourInstall,
+    gstRate: quote.gstRate,
+  });
 
   const hasEmptyDescriptions = quote.items.some((item) => !item.description.trim());
   const hasZeroPriceItems = quote.items.some((item) => item.description.trim() && item.unitPrice <= 0);
@@ -423,10 +426,10 @@ export default function QuoteBuilder() {
                   <span>${labourInstall.toFixed(2)}</span>
                 </div>
               )}
-              {labourTotal > 0 && (
+              {totals.labourTotal > 0 && (
                 <div className="flex justify-between text-muted-foreground border-t border-border pt-1">
                   <span>Pre-GST Total</span>
-                  <span>${preGstTotal.toFixed(2)}</span>
+                  <span>${totals.preGstTotal.toFixed(2)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between text-muted-foreground">
@@ -440,11 +443,11 @@ export default function QuoteBuilder() {
                   />
                   %
                 </span>
-                <span>${gst.toFixed(2)}</span>
+                <span>${totals.gst.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-t border-border pt-2 font-display text-lg font-bold text-kindai-pink">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>${totals.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
