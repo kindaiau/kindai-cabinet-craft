@@ -22,6 +22,7 @@ const TradeWorkbench = lazy(() => import("./pages/TradeWorkbench"));
 const OrgDashboard = lazy(() => import("./pages/OrgDashboard"));
 const DocumentsScreen = lazy(() => import("./pages/DocumentsScreen"));
 const TeamScreen = lazy(() => import("./pages/TeamScreen"));
+const MissionControl = lazy(() => import("./pages/MissionControl"));
 const RequestAccess = lazy(() => import("./pages/RequestAccess"));
 const AccessRequested = lazy(() => import("./pages/AccessRequested"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -61,6 +62,7 @@ const App = () => (
                 <Route path="/org-dashboard" element={<OrgDashboard />} />
                 <Route path="/documents" element={<DocumentsScreen />} />
                 <Route path="/team" element={<TeamScreen />} />
+                <Route path="/mission-control" element={<MissionControl />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
