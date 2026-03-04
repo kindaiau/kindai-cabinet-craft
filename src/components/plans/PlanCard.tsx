@@ -1,4 +1,4 @@
-import { FileImage, Loader2, Trash2, Sparkles, CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { FileImage, Loader2, Trash2, Sparkles, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +37,7 @@ export interface Plan {
   created_at: string;
 }
 
-const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+const statusConfig: Record<string, { label: string; color: string; icon: LucideIcon }> = {
   uploaded: { label: "Ready", color: "bg-[hsl(var(--kindai-blue))]/10 text-[hsl(var(--kindai-blue))]", icon: FileImage },
   analyzing: { label: "Analyzing…", color: "bg-[hsl(var(--kindai-orange))]/10 text-[hsl(var(--kindai-orange))]", icon: Loader2 },
   analyzed: { label: "Complete", color: "bg-[hsl(var(--kindai-green))]/10 text-[hsl(var(--kindai-green))]", icon: CheckCircle2 },

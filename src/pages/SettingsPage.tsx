@@ -6,11 +6,37 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json, Tables, TablesUpdate } from "@/integrations/supabase/types";
 import LabourConfigPanel from "@/components/quotes/LabourConfigPanel";
 import {
   type LabourConfig,
+  type LabourMethod,
+  type HoursPerUnit,
+  type PricePerUnit,
   DEFAULT_LABOUR_CONFIG,
 } from "@/lib/labour-engine";
+
+const isRecord = (value: Json): value is Record<string, Json> => typeof value === "object" && value !== null && !Array.isArray(value);
+
+const toPricePerUnit = (value: Json): PricePerUnit => {
+  if (!isRecord(value)) return DEFAULT_LABOUR_CONFIG.fabPerUnit;
+  return {
+    base: Number(value.base ?? DEFAULT_LABOUR_CONFIG.fabPerUnit.base),
+    wall: Number(value.wall ?? DEFAULT_LABOUR_CONFIG.fabPerUnit.wall),
+    tall: Number(value.tall ?? DEFAULT_LABOUR_CONFIG.fabPerUnit.tall),
+    drawer_bank: Number(value.drawer_bank ?? DEFAULT_LABOUR_CONFIG.fabPerUnit.drawer_bank),
+  };
+};
+
+const toHoursPerUnit = (value: Json): HoursPerUnit => {
+  if (!isRecord(value)) return DEFAULT_LABOUR_CONFIG.fabHoursPerUnit;
+  return {
+    base: Number(value.base ?? DEFAULT_LABOUR_CONFIG.fabHoursPerUnit.base),
+    wall: Number(value.wall ?? DEFAULT_LABOUR_CONFIG.fabHoursPerUnit.wall),
+    tall: Number(value.tall ?? DEFAULT_LABOUR_CONFIG.fabHoursPerUnit.tall),
+    drawer_bank: Number(value.drawer_bank ?? DEFAULT_LABOUR_CONFIG.fabHoursPerUnit.drawer_bank),
+  };
+};
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -35,20 +61,21 @@ export default function SettingsPage() {
         .maybeSingle();
 
       if (data) {
-        setBusinessName(data.business_name ?? "");
-        setLocation(data.location ?? "");
-        setTradeType(data.trade_type ?? "");
-        setWasteFactor(data.default_waste_factor ?? 12);
+        const profile = data as Tables<"profiles">;
+        setBusinessName(profile.business_name ?? "");
+        setLocation(profile.location ?? "");
+        setTradeType(profile.trade_type ?? "");
+        setWasteFactor(profile.default_waste_factor ?? 12);
         setLabourConfig({
-          method: (data as any).labour_method ?? DEFAULT_LABOUR_CONFIG.method,
-          fabHourlyRate: (data as any).fab_hourly_rate ?? DEFAULT_LABOUR_CONFIG.fabHourlyRate,
-          installHourlyRate: (data as any).install_hourly_rate ?? DEFAULT_LABOUR_CONFIG.installHourlyRate,
-          fabPerLm: (data as any).fab_per_lm ?? DEFAULT_LABOUR_CONFIG.fabPerLm,
-          installPerLm: (data as any).install_per_lm ?? DEFAULT_LABOUR_CONFIG.installPerLm,
-          fabPerUnit: (data as any).fab_per_unit ?? DEFAULT_LABOUR_CONFIG.fabPerUnit,
-          installPerUnit: (data as any).install_per_unit ?? DEFAULT_LABOUR_CONFIG.installPerUnit,
-          fabHoursPerUnit: (data as any).fab_hours_per_unit ?? DEFAULT_LABOUR_CONFIG.fabHoursPerUnit,
-          installHoursPerUnit: (data as any).install_hours_per_unit ?? DEFAULT_LABOUR_CONFIG.installHoursPerUnit,
+          method: (profile.labour_method as LabourMethod) ?? DEFAULT_LABOUR_CONFIG.method,
+          fabHourlyRate: profile.fab_hourly_rate ?? DEFAULT_LABOUR_CONFIG.fabHourlyRate,
+          installHourlyRate: profile.install_hourly_rate ?? DEFAULT_LABOUR_CONFIG.installHourlyRate,
+          fabPerLm: profile.fab_per_lm ?? DEFAULT_LABOUR_CONFIG.fabPerLm,
+          installPerLm: profile.install_per_lm ?? DEFAULT_LABOUR_CONFIG.installPerLm,
+          fabPerUnit: toPricePerUnit(profile.fab_per_unit),
+          installPerUnit: toPricePerUnit(profile.install_per_unit),
+          fabHoursPerUnit: toHoursPerUnit(profile.fab_hours_per_unit),
+          installHoursPerUnit: toHoursPerUnit(profile.install_hours_per_unit),
         });
       }
       setLoading(false);
@@ -64,23 +91,25 @@ export default function SettingsPage() {
       return;
     }
 
+    const payload: TablesUpdate<"profiles"> = {
+      business_name: businessName || null,
+      location: location || null,
+      trade_type: tradeType || null,
+      default_waste_factor: wasteFactor,
+      labour_method: labourConfig.method,
+      fab_hourly_rate: labourConfig.fabHourlyRate,
+      install_hourly_rate: labourConfig.installHourlyRate,
+      fab_per_lm: labourConfig.fabPerLm,
+      install_per_lm: labourConfig.installPerLm,
+      fab_per_unit: labourConfig.fabPerUnit as unknown as Json,
+      install_per_unit: labourConfig.installPerUnit as unknown as Json,
+      fab_hours_per_unit: labourConfig.fabHoursPerUnit as unknown as Json,
+      install_hours_per_unit: labourConfig.installHoursPerUnit as unknown as Json,
+    };
+
     const { error } = await supabase
       .from("profiles")
-      .update({
-        business_name: businessName || null,
-        location: location || null,
-        trade_type: tradeType || null,
-        default_waste_factor: wasteFactor,
-        labour_method: labourConfig.method,
-        fab_hourly_rate: labourConfig.fabHourlyRate,
-        install_hourly_rate: labourConfig.installHourlyRate,
-        fab_per_lm: labourConfig.fabPerLm,
-        install_per_lm: labourConfig.installPerLm,
-        fab_per_unit: labourConfig.fabPerUnit as any,
-        install_per_unit: labourConfig.installPerUnit as any,
-        fab_hours_per_unit: labourConfig.fabHoursPerUnit as any,
-        install_hours_per_unit: labourConfig.installHoursPerUnit as any,
-      } as any)
+      .update(payload)
       .eq("user_id", user.id);
 
     setSaving(false);

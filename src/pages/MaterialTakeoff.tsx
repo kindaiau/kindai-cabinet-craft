@@ -57,7 +57,7 @@ export default function MaterialTakeoff() {
   });
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId);
-  const cabinets = selectedPlan?.analysis?.cabinets ?? [];
+  const cabinets = useMemo(() => selectedPlan?.analysis?.cabinets ?? [], [selectedPlan]);
 
   const takeoff: TakeoffResult | null = useMemo(() => {
     if (cabinets.length === 0) return null;

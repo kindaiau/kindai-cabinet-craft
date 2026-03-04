@@ -32,6 +32,20 @@ const defaultItem = (): QuoteLineItem => ({
   unitPrice: 0,
 });
 
+interface SelectedProject {
+  name: string;
+  client_name: string | null;
+  client_email: string | null;
+  address: string | null;
+}
+
+interface SelectedCabinet {
+  label: string;
+  type: string;
+  width_mm: number;
+  count: number;
+}
+
 export default function QuoteBuilder() {
   const { toast } = useToast();
   const [quote, setQuote] = useState<QuoteData>({
@@ -84,7 +98,7 @@ export default function QuoteBuilder() {
     loadDefaults();
   }, []);
 
-  const handleProjectSelected = (project: any, cabinets: any[]) => {
+  const handleProjectSelected = (project: SelectedProject | null, cabinets: SelectedCabinet[]) => {
     if (!project) return;
     setQuote((prev) => ({
       ...prev,
@@ -115,10 +129,10 @@ export default function QuoteBuilder() {
 
   const labourBreakdown = cabinetInputs.length > 0 ? calculateLabour(cabinetInputs, labourConfig) : null;
 
-  const updateField = (field: keyof QuoteData, value: any) =>
+  const updateField = <K extends keyof QuoteData>(field: K, value: QuoteData[K]) =>
     setQuote((prev) => ({ ...prev, [field]: value }));
 
-  const updateItem = (id: string, field: keyof QuoteLineItem, value: any) =>
+  const updateItem = <K extends keyof QuoteLineItem>(id: string, field: K, value: QuoteLineItem[K]) =>
     setQuote((prev) => ({
       ...prev,
       items: prev.items.map((item) => (item.id === id ? { ...item, [field]: value } : item)),

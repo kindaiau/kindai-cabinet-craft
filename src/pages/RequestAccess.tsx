@@ -59,10 +59,10 @@ export default function RequestAccess() {
         replace: true,
         state: { email: form.email, business_name: form.business_name },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Couldn’t submit request",
-        description: error.message ?? "Please try again.",
+        description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       });
     } finally {

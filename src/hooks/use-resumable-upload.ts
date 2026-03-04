@@ -41,7 +41,6 @@ export function useResumableUpload({ bucket, onComplete, onError }: UseResumable
     const uploadingFile: UploadingFile = { id, file, progress: 0, status: "uploading", filePath };
     setUploads((prev) => new Map(prev).set(id, uploadingFile));
 
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
     return new Promise<UploadingFile>((resolve, reject) => {
@@ -85,7 +84,7 @@ export function useResumableUpload({ bucket, onComplete, onError }: UseResumable
       tusUploads.current.set(id, upload);
       upload.findPreviousUploads().then((previousUploads) => {
         if (previousUploads.length) {
-          (upload as any).resumeUpload(previousUploads[0]);
+          upload.resumeFromPreviousUpload(previousUploads[0]);
         }
         upload.start();
       });

@@ -51,8 +51,8 @@ export default function Auth() {
         if (error) throw error;
         navigate("/dashboard");
       }
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Error", description: error instanceof Error ? error.message : "Unexpected error", variant: "destructive" });
     } finally {
       setLoading(false);
     }

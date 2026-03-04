@@ -20,12 +20,28 @@ interface Project {
   created_at: string;
 }
 
+interface AnalysisCabinet {
+  label?: string;
+  type?: string;
+  width_mm?: number;
+  height_mm?: number;
+  depth_mm?: number;
+  door_count?: number;
+  drawer_count?: number;
+  shelf_count?: number;
+  features?: string[];
+}
+
+interface PlanAnalysis {
+  cabinets?: AnalysisCabinet[];
+}
+
 interface Plan {
   id: string;
   file_name: string;
   status: string;
   project_id: string | null;
-  analysis: any;
+  analysis: PlanAnalysis | null;
   created_at: string;
 }
 
@@ -120,7 +136,7 @@ export default function ProjectDetail({ project, onBack }: Props) {
       if (analyzedPlans.length === 0) throw new Error("No analyzed plans with cabinets found");
 
       const rows = analyzedPlans.flatMap((plan) =>
-        (plan.analysis.cabinets as any[]).map((cab: any) => ({
+        (plan.analysis?.cabinets ?? []).map((cab) => ({
           user_id: user.id,
           project_id: project.id,
           plan_id: plan.id,

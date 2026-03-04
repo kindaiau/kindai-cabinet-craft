@@ -12,6 +12,14 @@ interface SupplierConfig {
   searchUrl: (query: string) => string;
 }
 
+interface SupplierProduct {
+  name?: string;
+  price?: number;
+  unit?: string;
+  sku?: string;
+  description?: string;
+}
+
 const SUPPLIERS: SupplierConfig[] = [
   {
     name: "Bunnings",
@@ -112,7 +120,7 @@ Deno.serve(async (req) => {
         return {
           supplier: supplier.name,
           slug: supplier.slug,
-          products: products.map((p: any) => ({
+          products: (products as SupplierProduct[]).map((p) => ({
             ...p,
             supplier: supplier.name,
             supplierSlug: supplier.slug,

@@ -127,7 +127,8 @@ export async function generateQuotePdf(data: QuoteData): Promise<jsPDF> {
     styles: { lineColor: [220, 220, 230], lineWidth: 0.3 },
   });
 
-  const finalY = (doc as any).lastAutoTable.finalY + 6;
+  const autoTableDoc = doc as jsPDF & { lastAutoTable?: { finalY: number } };
+  const finalY = (autoTableDoc.lastAutoTable?.finalY ?? tableStartY) + 6;
   const totalsX = pageWidth - 20;
 
   doc.setFontSize(9);

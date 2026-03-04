@@ -17,8 +17,15 @@ interface Project {
   address: string | null;
 }
 
+interface ProjectCabinetSummary {
+  label: string;
+  type: string;
+  width_mm: number;
+  count: number;
+}
+
 interface ProjectSelectorProps {
-  onProjectSelected: (project: Project | null, cabinets: any[]) => void;
+  onProjectSelected: (project: Project | null, cabinets: ProjectCabinetSummary[]) => void;
 }
 
 export default function ProjectSelector({ onProjectSelected }: ProjectSelectorProps) {
@@ -50,8 +57,10 @@ export default function ProjectSelector({ onProjectSelected }: ProjectSelectorPr
       .select("label, type, width_mm, quantity:id")
       .eq("project_id", value);
 
+    type CabinetRow = { label: string; type: string; width_mm: number; quantity: string };
+
     // Group cabinets by label+type and count
-    const grouped = (cabinets ?? []).reduce<Record<string, { label: string; type: string; width_mm: number; count: number }>>((acc, c) => {
+    const grouped = ((cabinets ?? []) as CabinetRow[]).reduce<Record<string, ProjectCabinetSummary>>((acc, c) => {
       const key = `${c.label}_${c.type}_${c.width_mm}`;
       if (!acc[key]) acc[key] = { label: c.label, type: c.type, width_mm: c.width_mm, count: 0 };
       acc[key].count += 1;

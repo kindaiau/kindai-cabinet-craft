@@ -64,9 +64,9 @@ export default function UploadPlans() {
       queryClient.invalidateQueries({ queryKey: ["plans"] });
       toast({ title: "Analysis complete", description: "Cabinets extracted from your plan" });
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       queryClient.invalidateQueries({ queryKey: ["plans"] });
-      toast({ title: "Analysis failed", description: err.message, variant: "destructive" });
+      toast({ title: "Analysis failed", description: err instanceof Error ? err.message : "Unexpected error", variant: "destructive" });
     },
   });
 

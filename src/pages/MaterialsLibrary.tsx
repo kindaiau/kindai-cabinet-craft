@@ -85,8 +85,8 @@ export default function MaterialsLibrary() {
       setForm(emptyForm);
       toast({ title: editingId ? "Material updated" : "Material added" });
     },
-    onError: (err: any) => {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    onError: (err: unknown) => {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Unexpected error", variant: "destructive" });
     },
   });
 
