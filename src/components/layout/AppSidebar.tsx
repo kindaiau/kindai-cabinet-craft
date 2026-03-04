@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Upload, Calculator, DollarSign, FileText, FilePen, Package, Settings, Rocket, Wrench, KanbanSquare, LogOut } from "lucide-react";
+import { LayoutDashboard, Upload, Calculator, DollarSign, FileText, FilePen, Package, Settings, Rocket, Wrench, KanbanSquare, Files, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import kindaiLogo from "@/assets/kindai-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ const navItems = [
   { label: "Estimator Suite", icon: Rocket, path: "/trade-apps" },
   { label: "Trade Workbench", icon: Wrench, path: "/trade-workbench" },
   { label: "Org Dashboard", icon: KanbanSquare, path: "/org-dashboard" },
+  { label: "Documents", icon: Files, path: "/documents" },
 ];
 
 export function AppSidebar() {
