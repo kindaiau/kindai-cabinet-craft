@@ -18,6 +18,7 @@ const QuoteBuilder = lazy(() => import("./pages/QuoteBuilder"));
 const MaterialsLibrary = lazy(() => import("./pages/MaterialsLibrary"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const TradeApps = lazy(() => import("./pages/TradeApps"));
+const TradeWorkbench = lazy(() => import("./pages/TradeWorkbench"));
 const RequestAccess = lazy(() => import("./pages/RequestAccess"));
 const AccessRequested = lazy(() => import("./pages/AccessRequested"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -53,6 +54,7 @@ const App = () => (
                 <Route path="/materials" element={<MaterialsLibrary />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/trade-apps" element={<TradeApps />} />
+                <Route path="/trade-workbench" element={<TradeWorkbench />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
