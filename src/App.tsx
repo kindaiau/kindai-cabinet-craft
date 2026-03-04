@@ -19,6 +19,7 @@ const MaterialsLibrary = lazy(() => import("./pages/MaterialsLibrary"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const TradeApps = lazy(() => import("./pages/TradeApps"));
 const TradeWorkbench = lazy(() => import("./pages/TradeWorkbench"));
+const OrgDashboard = lazy(() => import("./pages/OrgDashboard"));
 const RequestAccess = lazy(() => import("./pages/RequestAccess"));
 const AccessRequested = lazy(() => import("./pages/AccessRequested"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -55,6 +56,7 @@ const App = () => (
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/trade-apps" element={<TradeApps />} />
                 <Route path="/trade-workbench" element={<TradeWorkbench />} />
+                <Route path="/org-dashboard" element={<OrgDashboard />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
