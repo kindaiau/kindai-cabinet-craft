@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Download, Plus, Trash2, Eye, Send, Loader2 } from "lucide-react";
+import { Download, Plus, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { generateQuotePdf, type QuoteData, type QuoteLineItem } from "@/lib/generate-quote-pdf";
+import {
+  ESTIMATE_RULES_VERSION,
+  ESTIMATE_SCHEMA_VERSION,
+  canExportEstimate,
+  type EstimateOutputContract,
+} from "@/lib/estimate-contract";
+import { evaluateConfidenceAndAssumptions } from "@/lib/confidence-assumptions-engine";
+import { ACTIVE_COMPLIANCE_PROFILE } from "@/lib/compliance-profile";
 import LabourConfigPanel from "@/components/quotes/LabourConfigPanel";
 import ProjectSelector from "@/components/quotes/ProjectSelector";
 import {
@@ -23,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ConfidenceChip } from "@/components/trust/ConfidenceChip";
 import { AssumptionBlock } from "@/components/trust/AssumptionBlock";
 import { ReviewGateBanner } from "@/components/trust/ReviewGateBanner";
+import { calculateQuoteTotals } from "@/lib/quote-math";
 
 const defaultItem = (): QuoteLineItem => ({
   id: crypto.randomUUID(),
@@ -31,6 +40,20 @@ const defaultItem = (): QuoteLineItem => ({
   unit: "ea",
   unitPrice: 0,
 });
+
+interface SelectedProject {
+  name: string;
+  client_name: string | null;
+  client_email: string | null;
+  address: string | null;
+}
+
+interface SelectedCabinet {
+  label: string;
+  type: string;
+  width_mm: number;
+  count: number;
+}
 
 export default function QuoteBuilder() {
   const { toast } = useToast();
@@ -53,7 +76,8 @@ export default function QuoteBuilder() {
   });
 
   const [labourConfig, setLabourConfig] = useState<LabourConfig>(DEFAULT_LABOUR_CONFIG);
-  const [isSending, setIsSending] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [standardsReviewed, setStandardsReviewed] = useState(false);
 
   // Load saved labour defaults from profile on mount
   useEffect(() => {
@@ -84,7 +108,7 @@ export default function QuoteBuilder() {
     loadDefaults();
   }, []);
 
-  const handleProjectSelected = (project: any, cabinets: any[]) => {
+  const handleProjectSelected = (project: SelectedProject | null, cabinets: SelectedCabinet[]) => {
     if (!project) return;
     setQuote((prev) => ({
       ...prev,
@@ -115,10 +139,10 @@ export default function QuoteBuilder() {
 
   const labourBreakdown = cabinetInputs.length > 0 ? calculateLabour(cabinetInputs, labourConfig) : null;
 
-  const updateField = (field: keyof QuoteData, value: any) =>
+  const updateField = <K extends keyof QuoteData>(field: K, value: QuoteData[K]) =>
     setQuote((prev) => ({ ...prev, [field]: value }));
 
-  const updateItem = (id: string, field: keyof QuoteLineItem, value: any) =>
+  const updateItem = <K extends keyof QuoteLineItem>(id: string, field: K, value: QuoteLineItem[K]) =>
     setQuote((prev) => ({
       ...prev,
       items: prev.items.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
@@ -131,33 +155,39 @@ export default function QuoteBuilder() {
   const subtotal = quote.items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
   const labourFab = labourBreakdown?.fabTotal ?? 0;
   const labourInstall = labourBreakdown?.installTotal ?? 0;
-  const labourTotal = labourFab + labourInstall;
-  const preGstTotal = subtotal + labourTotal;
-  const gst = preGstTotal * (quote.gstRate / 100);
-  const total = preGstTotal + gst;
+  const totals = calculateQuoteTotals({
+    materialsSubtotal: subtotal,
+    labourFab,
+    labourInstall,
+    gstRate: quote.gstRate,
+  });
 
-  const hasEmptyDescriptions = quote.items.some((item) => !item.description.trim());
-  const hasZeroPriceItems = quote.items.some((item) => item.description.trim() && item.unitPrice <= 0);
-  const assumptions: string[] = [];
+  const confidenceResult = evaluateConfidenceAndAssumptions({
+    lines: quote.items,
+    businessAbn: quote.businessAbn,
+    clientEmail: quote.clientEmail,
+    projectName: quote.projectName,
+    tradeCode: ACTIVE_COMPLIANCE_PROFILE.tradeCode,
+  });
 
-  if (cabinetInputs.length > 0) {
-    assumptions.push("Cabinet width defaults to 600mm when dimensions are not provided.");
-  }
-
-  if (!quote.clientEmail) {
-    assumptions.push("Client email is missing and will need confirmation before sending.");
-  }
-
-  if (!quote.businessAbn) {
-    assumptions.push("ABN not provided yet. Add this before issuing a formal quote.");
-  }
-
-  const requiresManualReview = hasEmptyDescriptions || hasZeroPriceItems;
-  const confidenceLevel: "high" | "medium" | "low" = requiresManualReview
-    ? "low"
-    : assumptions.length > 0
+  const confidenceLevel: "high" | "medium" | "low" = confidenceResult.aggregateConfidence >= 90
+    ? "high"
+    : confidenceResult.aggregateConfidence >= 80
       ? "medium"
-      : "high";
+      : "low";
+
+  const complianceAssumptions = [
+    ...confidenceResult.assumptions,
+    ...confidenceResult.normalizedLines.flatMap((line) => line.assumptions),
+    `Compliance profile: ${ACTIVE_COMPLIANCE_PROFILE.standards.join(", ")}`,
+  ];
+
+  const complianceBlockers = [...confidenceResult.blockers];
+  if (!standardsReviewed) {
+    complianceBlockers.push(
+      `Compliance review acknowledgement required (${ACTIVE_COMPLIANCE_PROFILE.standards.join(", ")}).`,
+    );
+  }
 
   const buildExportData = (): QuoteData => {
     // Append labour as line items for PDF
@@ -182,64 +212,113 @@ export default function QuoteBuilder() {
         });
       }
     }
-    return { ...quote, items: [...quote.items.filter((i) => i.description), ...labourItems] };
+
+    const gateReasons = complianceBlockers;
+    const reviewStatus = complianceBlockers.length > 0 || confidenceResult.aggregateConfidence < 80
+      ? "review_required"
+      : "order_ready";
+
+    return {
+      ...quote,
+      items: [...quote.items.filter((i) => i.description), ...labourItems],
+      auditMeta: {
+        schemaVersion: ESTIMATE_SCHEMA_VERSION,
+        rulesVersion: ESTIMATE_RULES_VERSION,
+        generatedAt: new Date().toISOString(),
+        generatedBy: quote.businessName || "Kindai Operator",
+        confidence: confidenceResult.aggregateConfidence,
+        gateStatus: reviewStatus,
+        assumptions: complianceAssumptions,
+        gateReasons,
+      },
+    };
   };
 
-  const handleExportPdf = () => {
+  const buildEstimateContract = (): EstimateOutputContract => {
+    const generatedAt = new Date().toISOString();
+
+    return {
+      project: {
+        projectType: "domestic",
+        location: quote.clientAddress || "AU",
+        scope: quote.projectName || "General estimate",
+        urgency: "standard",
+        marginMode: "fixed",
+        currency: "AUD",
+      },
+      lineItems: confidenceResult.normalizedLines,
+      summary: {
+        subtotalMaterials: subtotal,
+        subtotalLabor: totals.labourTotal,
+        overheadPct: 0,
+        marginPct: 0,
+        gstPct: quote.gstRate,
+        total: totals.total,
+      },
+      generatedAt,
+      schemaVersion: ESTIMATE_SCHEMA_VERSION,
+      reviewStatus: complianceBlockers.length > 0 || confidenceResult.aggregateConfidence < 80 ? "review_required" : "order_ready",
+      gateReasons: complianceBlockers,
+      assumptions: complianceAssumptions,
+      aggregateConfidence: confidenceResult.aggregateConfidence,
+      auditMeta: {
+        generatedAt,
+        schemaVersion: ESTIMATE_SCHEMA_VERSION,
+        rulesVersion: ESTIMATE_RULES_VERSION,
+        generatedBy: quote.businessName || "Kindai Operator",
+        gateStatus: complianceBlockers.length > 0 || confidenceResult.aggregateConfidence < 80 ? "review_required" : "order_ready",
+        gateReasons: complianceBlockers,
+      },
+    };
+  };
+
+  const handleExportPdf = async () => {
     const data = buildExportData();
+    const contract = buildEstimateContract();
+    const exportGate = canExportEstimate(contract);
+
     if (data.items.length === 0) {
       toast({ title: "Add at least one line item", variant: "destructive" });
       return;
     }
-    const doc = generateQuotePdf(data);
-    doc.save(`${quote.quoteNumber}.pdf`);
-    toast({ title: "PDF downloaded!", description: `${quote.quoteNumber}.pdf saved.` });
-  };
 
-  const handlePreview = () => {
-    const data = buildExportData();
-    if (data.items.length === 0) {
-      toast({ title: "Add at least one line item", variant: "destructive" });
-      return;
-    }
-    const doc = generateQuotePdf(data);
-    const blob = doc.output("blob");
-    window.open(URL.createObjectURL(blob), "_blank");
-  };
-
-  const handleSendToClient = async () => {
-    if (!quote.clientEmail) {
-      toast({ title: "Client email is required", variant: "destructive" });
-      return;
-    }
-    const data = buildExportData();
-    if (data.items.length === 0) {
-      toast({ title: "Add at least one line item", variant: "destructive" });
-      return;
-    }
-    setIsSending(true);
-    try {
-      const doc = generateQuotePdf(data);
-      const pdfBase64 = doc.output("datauristring").split(",")[1];
-      const { data: result, error } = await supabase.functions.invoke("send-quote", {
-        body: {
-          to: quote.clientEmail,
-          subject: `Quote ${quote.quoteNumber} from ${quote.businessName || "us"}`,
-          businessName: quote.businessName,
-          quoteNumber: quote.quoteNumber,
-          clientName: quote.clientName,
-          pdfBase64,
-        },
+    if (!exportGate.allowed) {
+      toast({
+        title: "Draft — Do Not Order",
+        description: exportGate.reasons[0] || "Resolve blockers before export.",
+        variant: "destructive",
       });
-      if (error) throw error;
-      if (result?.error) throw new Error(result.error);
-      toast({ title: "Quote sent!", description: `Email delivered to ${quote.clientEmail}` });
-    } catch (err: any) {
-      toast({ title: "Failed to send", description: err.message, variant: "destructive" });
+      return;
+    }
+
+    try {
+      setPdfLoading(true);
+      const doc = await generateQuotePdf(data);
+      doc.save(`${quote.quoteNumber}.pdf`);
+      toast({ title: "PDF downloaded!", description: `${quote.quoteNumber}.pdf saved.` });
     } finally {
-      setIsSending(false);
+      setPdfLoading(false);
     }
   };
+
+  const handlePreview = async () => {
+    const data = buildExportData();
+    if (data.items.length === 0) {
+      toast({ title: "Add at least one line item", variant: "destructive" });
+      return;
+    }
+
+    try {
+      setPdfLoading(true);
+      const doc = await generateQuotePdf(data);
+      const blob = doc.output("blob");
+      window.open(URL.createObjectURL(blob), "_blank");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const exportGate = canExportEstimate(buildEstimateContract());
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
@@ -249,19 +328,15 @@ export default function QuoteBuilder() {
           <h1 className="font-display text-3xl font-bold">Quote Builder</h1>
           <p className="mt-1 text-muted-foreground">Create professional quotes for your clients</p>
           <div className="mt-3">
-            <ConfidenceChip level={confidenceLevel} />
+            <ConfidenceChip level={confidenceLevel} label={`${confidenceResult.aggregateConfidence}% confidence`} />
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handlePreview}>
-            <Eye className="mr-2 h-4 w-4" /> Preview
+          <Button variant="outline" onClick={handlePreview} disabled={pdfLoading}>
+            <Eye className="mr-2 h-4 w-4" /> {pdfLoading ? "Preparing..." : "Preview"}
           </Button>
-          <Button variant="outline" onClick={handleSendToClient} disabled={isSending || !quote.clientEmail}>
-            {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-            Send to Client
-          </Button>
-          <Button className="gradient-kindai border-0 font-semibold" onClick={handleExportPdf}>
-            <Download className="mr-2 h-4 w-4" /> Export PDF
+          <Button className="gradient-kindai border-0 font-semibold" onClick={handleExportPdf} disabled={pdfLoading || !exportGate.allowed}>
+            <Download className="mr-2 h-4 w-4" /> {pdfLoading ? "Preparing..." : "Export PDF"}
           </Button>
         </div>
       </div>
@@ -339,11 +414,37 @@ export default function QuoteBuilder() {
         </Card>
       </div>
 
-      {requiresManualReview && (
+      {!exportGate.allowed && (
         <div className="mt-6">
-          <ReviewGateBanner description="Some line items are incomplete or priced at $0.00. Review these before sharing the quote." />
+          <ReviewGateBanner
+            title="Draft — Do Not Order"
+            description="This estimate is not export-ready yet. Resolve every blocker below."
+            blockers={exportGate.reasons}
+          />
         </div>
       )}
+
+      <Card className="mt-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="font-display text-base">Australian compliance review</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p className="text-muted-foreground">Trade: {ACTIVE_COMPLIANCE_PROFILE.tradeLabel}</p>
+          <ul className="list-disc pl-5 text-foreground/90">
+            {ACTIVE_COMPLIANCE_PROFILE.standards.map((standard) => (
+              <li key={standard}>{standard}</li>
+            ))}
+          </ul>
+          <label className="flex items-center gap-2 font-medium">
+            <input
+              type="checkbox"
+              checked={standardsReviewed}
+              onChange={(e) => setStandardsReviewed(e.target.checked)}
+            />
+            I confirm this estimate has been reviewed against the listed Australian standards.
+          </label>
+        </CardContent>
+      </Card>
 
       {/* Line Items */}
       <Card className="mt-6">
@@ -435,10 +536,10 @@ export default function QuoteBuilder() {
                   <span>${labourInstall.toFixed(2)}</span>
                 </div>
               )}
-              {labourTotal > 0 && (
+              {totals.labourTotal > 0 && (
                 <div className="flex justify-between text-muted-foreground border-t border-border pt-1">
                   <span>Pre-GST Total</span>
-                  <span>${preGstTotal.toFixed(2)}</span>
+                  <span>${totals.preGstTotal.toFixed(2)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between text-muted-foreground">
@@ -452,11 +553,11 @@ export default function QuoteBuilder() {
                   />
                   %
                 </span>
-                <span>${gst.toFixed(2)}</span>
+                <span>${totals.gst.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-t border-border pt-2 font-display text-lg font-bold text-kindai-pink">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>${totals.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -472,8 +573,8 @@ export default function QuoteBuilder() {
         />
       </div>
 
-      {assumptions.length > 0 && (
-        <AssumptionBlock className="mt-6" items={assumptions} />
+      {complianceAssumptions.length > 0 && (
+        <AssumptionBlock className="mt-6" items={complianceAssumptions} />
       )}
 
       {/* Notes */}
