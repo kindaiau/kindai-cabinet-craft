@@ -1,5 +1,4 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import type jsPDF from "jspdf";
 
 export interface QuoteLineItem {
   id: string;
@@ -7,6 +6,17 @@ export interface QuoteLineItem {
   quantity: number;
   unit: string;
   unitPrice: number;
+}
+
+export interface QuoteAuditMeta {
+  schemaVersion: string;
+  rulesVersion: string;
+  generatedAt: string;
+  generatedBy: string;
+  confidence: number;
+  gateStatus: "draft" | "review_required" | "order_ready";
+  assumptions: string[];
+  gateReasons: string[];
 }
 
 export interface QuoteData {
@@ -25,23 +35,26 @@ export interface QuoteData {
   items: QuoteLineItem[];
   notes: string;
   gstRate: number;
+  auditMeta?: QuoteAuditMeta;
 }
 
-export function generateQuotePdf(data: QuoteData) {
-  const doc = new jsPDF();
+export async function generateQuotePdf(data: QuoteData): Promise<jsPDF> {
+  const [{ default: JsPdfCtor }, { default: autoTable }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
+
+  const doc = new JsPdfCtor();
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  // Header bar
-  doc.setFillColor(255, 70, 200); // kindai pink
+  doc.setFillColor(255, 70, 200);
   doc.rect(0, 0, pageWidth, 8, "F");
 
-  // Business name
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.setTextColor(40, 40, 60);
   doc.text(data.businessName || "Your Business", 20, 28);
 
-  // Business details
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(100, 100, 120);
@@ -51,7 +64,6 @@ export function generateQuotePdf(data: QuoteData) {
   if (data.businessPhone) { doc.text(data.businessPhone, 20, yPos); yPos += 4; }
   if (data.businessEmail) { doc.text(data.businessEmail, 20, yPos); yPos += 4; }
 
-  // Quote title + number
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(255, 70, 200);
@@ -64,12 +76,10 @@ export function generateQuotePdf(data: QuoteData) {
   doc.text(`Date: ${data.quoteDate}`, pageWidth - 20, 41, { align: "right" });
   doc.text(`Valid Until: ${data.validUntil}`, pageWidth - 20, 46, { align: "right" });
 
-  // Divider
   const dividerY = Math.max(yPos + 4, 52);
   doc.setDrawColor(220, 220, 230);
   doc.line(20, dividerY, pageWidth - 20, dividerY);
 
-  // Client details
   let clientY = dividerY + 8;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
@@ -83,7 +93,6 @@ export function generateQuotePdf(data: QuoteData) {
   if (data.clientAddress) { doc.text(data.clientAddress, 20, clientY); clientY += 4; }
   if (data.clientEmail) { doc.text(data.clientEmail, 20, clientY); clientY += 4; }
 
-  // Project name
   if (data.projectName) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
@@ -95,7 +104,6 @@ export function generateQuotePdf(data: QuoteData) {
     doc.text(data.projectName, pageWidth / 2, dividerY + 14);
   }
 
-  // Items table
   const tableStartY = clientY + 8;
   const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   const gst = subtotal * (data.gstRate / 100);
@@ -131,8 +139,8 @@ export function generateQuotePdf(data: QuoteData) {
     styles: { lineColor: [220, 220, 230], lineWidth: 0.3 },
   });
 
-  // Totals
-  const finalY = (doc as any).lastAutoTable.finalY + 6;
+  const autoTableDoc = doc as jsPDF & { lastAutoTable?: { finalY: number } };
+  const finalY = (autoTableDoc.lastAutoTable?.finalY ?? tableStartY) + 6;
   const totalsX = pageWidth - 20;
 
   doc.setFontSize(9);
@@ -149,7 +157,7 @@ export function generateQuotePdf(data: QuoteData) {
   doc.text("TOTAL:", totalsX - 40, finalY + 15);
   doc.text(`$${total.toFixed(2)}`, totalsX, finalY + 15, { align: "right" });
 
-  // Notes
+  let footerAnchorY = finalY + 28;
   if (data.notes) {
     const notesY = finalY + 28;
     doc.setFont("helvetica", "bold");
@@ -161,9 +169,31 @@ export function generateQuotePdf(data: QuoteData) {
     doc.setTextColor(100, 100, 120);
     const splitNotes = doc.splitTextToSize(data.notes, pageWidth - 40);
     doc.text(splitNotes, 20, notesY + 6);
+    footerAnchorY = notesY + 6 + splitNotes.length * 3.5 + 6;
   }
 
-  // Footer bar
+  if (data.auditMeta) {
+    const metaY = Math.max(footerAnchorY, finalY + 28);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(40, 40, 60);
+    doc.text("Audit Metadata", 20, metaY);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 120);
+    const metaLines = [
+      `Schema: ${data.auditMeta.schemaVersion} | Rules: ${data.auditMeta.rulesVersion}`,
+      `Generated: ${data.auditMeta.generatedAt} by ${data.auditMeta.generatedBy}`,
+      `Confidence: ${data.auditMeta.confidence}% | Gate: ${data.auditMeta.gateStatus}`,
+      `Gate reasons: ${data.auditMeta.gateReasons.length > 0 ? data.auditMeta.gateReasons.join("; ") : "none"}`,
+      `Assumptions: ${data.auditMeta.assumptions.length > 0 ? data.auditMeta.assumptions.join("; ") : "none"}`,
+    ];
+
+    const wrappedMeta = doc.splitTextToSize(metaLines.join("\n"), pageWidth - 40);
+    doc.text(wrappedMeta, 20, metaY + 5);
+  }
+
   const pageHeight = doc.internal.pageSize.getHeight();
   doc.setFillColor(255, 70, 200);
   doc.rect(0, pageHeight - 6, pageWidth, 6, "F");
