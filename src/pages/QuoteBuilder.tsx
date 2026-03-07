@@ -8,6 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { generateQuotePdf, type QuoteData, type QuoteLineItem } from "@/lib/generate-quote-pdf";
+import {
+  ESTIMATE_RULES_VERSION,
+  ESTIMATE_SCHEMA_VERSION,
+  canExportEstimate,
+  type EstimateOutputContract,
+} from "@/lib/estimate-contract";
+import { evaluateConfidenceAndAssumptions } from "@/lib/confidence-assumptions-engine";
 import LabourConfigPanel from "@/components/quotes/LabourConfigPanel";
 import ProjectSelector from "@/components/quotes/ProjectSelector";
 import {
@@ -153,28 +160,23 @@ export default function QuoteBuilder() {
     gstRate: quote.gstRate,
   });
 
-  const hasEmptyDescriptions = quote.items.some((item) => !item.description.trim());
-  const hasZeroPriceItems = quote.items.some((item) => item.description.trim() && item.unitPrice <= 0);
-  const assumptions: string[] = [];
+  const confidenceResult = evaluateConfidenceAndAssumptions({
+    lines: quote.items,
+    businessAbn: quote.businessAbn,
+    clientEmail: quote.clientEmail,
+    projectName: quote.projectName,
+  });
 
-  if (cabinetInputs.length > 0) {
-    assumptions.push("Cabinet width defaults to 600mm when dimensions are not provided.");
-  }
-
-  if (!quote.clientEmail) {
-    assumptions.push("Client email is missing and will need confirmation before sending.");
-  }
-
-  if (!quote.businessAbn) {
-    assumptions.push("ABN not provided yet. Add this before issuing a formal quote.");
-  }
-
-  const requiresManualReview = hasEmptyDescriptions || hasZeroPriceItems;
-  const confidenceLevel: "high" | "medium" | "low" = requiresManualReview
-    ? "low"
-    : assumptions.length > 0
+  const confidenceLevel: "high" | "medium" | "low" = confidenceResult.aggregateConfidence >= 90
+    ? "high"
+    : confidenceResult.aggregateConfidence >= 80
       ? "medium"
-      : "high";
+      : "low";
+
+  const complianceAssumptions = [
+    ...confidenceResult.assumptions,
+    ...confidenceResult.normalizedLines.flatMap((line) => line.assumptions),
+  ];
 
   const buildExportData = (): QuoteData => {
     // Append labour as line items for PDF
@@ -199,13 +201,80 @@ export default function QuoteBuilder() {
         });
       }
     }
-    return { ...quote, items: [...quote.items.filter((i) => i.description), ...labourItems] };
+
+    const gateReasons = confidenceResult.blockers;
+    const reviewStatus = confidenceResult.reviewStatus;
+
+    return {
+      ...quote,
+      items: [...quote.items.filter((i) => i.description), ...labourItems],
+      auditMeta: {
+        schemaVersion: ESTIMATE_SCHEMA_VERSION,
+        rulesVersion: ESTIMATE_RULES_VERSION,
+        generatedAt: new Date().toISOString(),
+        generatedBy: quote.businessName || "Kindai Operator",
+        confidence: confidenceResult.aggregateConfidence,
+        gateStatus: reviewStatus,
+        assumptions: complianceAssumptions,
+        gateReasons,
+      },
+    };
+  };
+
+  const buildEstimateContract = (): EstimateOutputContract => {
+    const generatedAt = new Date().toISOString();
+
+    return {
+      project: {
+        projectType: "domestic",
+        location: quote.clientAddress || "AU",
+        scope: quote.projectName || "General estimate",
+        urgency: "standard",
+        marginMode: "fixed",
+        currency: "AUD",
+      },
+      lineItems: confidenceResult.normalizedLines,
+      summary: {
+        subtotalMaterials: subtotal,
+        subtotalLabor: totals.labourTotal,
+        overheadPct: 0,
+        marginPct: 0,
+        gstPct: quote.gstRate,
+        total: totals.total,
+      },
+      generatedAt,
+      schemaVersion: ESTIMATE_SCHEMA_VERSION,
+      reviewStatus: confidenceResult.reviewStatus,
+      gateReasons: confidenceResult.blockers,
+      assumptions: complianceAssumptions,
+      aggregateConfidence: confidenceResult.aggregateConfidence,
+      auditMeta: {
+        generatedAt,
+        schemaVersion: ESTIMATE_SCHEMA_VERSION,
+        rulesVersion: ESTIMATE_RULES_VERSION,
+        generatedBy: quote.businessName || "Kindai Operator",
+        gateStatus: confidenceResult.reviewStatus,
+        gateReasons: confidenceResult.blockers,
+      },
+    };
   };
 
   const handleExportPdf = async () => {
     const data = buildExportData();
+    const contract = buildEstimateContract();
+    const exportGate = canExportEstimate(contract);
+
     if (data.items.length === 0) {
       toast({ title: "Add at least one line item", variant: "destructive" });
+      return;
+    }
+
+    if (!exportGate.allowed) {
+      toast({
+        title: "Draft — Do Not Order",
+        description: exportGate.reasons[0] || "Resolve blockers before export.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -236,6 +305,8 @@ export default function QuoteBuilder() {
     }
   };
 
+  const exportGate = canExportEstimate(buildEstimateContract());
+
   return (
     <div className="p-6 md:p-8 max-w-5xl">
       {/* Header */}
@@ -244,14 +315,14 @@ export default function QuoteBuilder() {
           <h1 className="font-display text-3xl font-bold">Quote Builder</h1>
           <p className="mt-1 text-muted-foreground">Create professional quotes for your clients</p>
           <div className="mt-3">
-            <ConfidenceChip level={confidenceLevel} />
+            <ConfidenceChip level={confidenceLevel} label={`${confidenceResult.aggregateConfidence}% confidence`} />
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handlePreview} disabled={pdfLoading}>
             <Eye className="mr-2 h-4 w-4" /> {pdfLoading ? "Preparing..." : "Preview"}
           </Button>
-          <Button className="gradient-kindai border-0 font-semibold" onClick={handleExportPdf} disabled={pdfLoading}>
+          <Button className="gradient-kindai border-0 font-semibold" onClick={handleExportPdf} disabled={pdfLoading || !exportGate.allowed}>
             <Download className="mr-2 h-4 w-4" /> {pdfLoading ? "Preparing..." : "Export PDF"}
           </Button>
         </div>
@@ -330,9 +401,13 @@ export default function QuoteBuilder() {
         </Card>
       </div>
 
-      {requiresManualReview && (
+      {!exportGate.allowed && (
         <div className="mt-6">
-          <ReviewGateBanner description="Some line items are incomplete or priced at $0.00. Review these before sharing the quote." />
+          <ReviewGateBanner
+            title="Draft — Do Not Order"
+            description="This estimate is not export-ready yet. Resolve every blocker below."
+            blockers={exportGate.reasons}
+          />
         </div>
       )}
 
@@ -463,8 +538,8 @@ export default function QuoteBuilder() {
         />
       </div>
 
-      {assumptions.length > 0 && (
-        <AssumptionBlock className="mt-6" items={assumptions} />
+      {complianceAssumptions.length > 0 && (
+        <AssumptionBlock className="mt-6" items={complianceAssumptions} />
       )}
 
       {/* Notes */}

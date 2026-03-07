@@ -8,6 +8,17 @@ export interface QuoteLineItem {
   unitPrice: number;
 }
 
+export interface QuoteAuditMeta {
+  schemaVersion: string;
+  rulesVersion: string;
+  generatedAt: string;
+  generatedBy: string;
+  confidence: number;
+  gateStatus: "draft" | "review_required" | "order_ready";
+  assumptions: string[];
+  gateReasons: string[];
+}
+
 export interface QuoteData {
   businessName: string;
   businessAbn: string;
@@ -24,6 +35,7 @@ export interface QuoteData {
   items: QuoteLineItem[];
   notes: string;
   gstRate: number;
+  auditMeta?: QuoteAuditMeta;
 }
 
 export async function generateQuotePdf(data: QuoteData): Promise<jsPDF> {
@@ -145,6 +157,7 @@ export async function generateQuotePdf(data: QuoteData): Promise<jsPDF> {
   doc.text("TOTAL:", totalsX - 40, finalY + 15);
   doc.text(`$${total.toFixed(2)}`, totalsX, finalY + 15, { align: "right" });
 
+  let footerAnchorY = finalY + 28;
   if (data.notes) {
     const notesY = finalY + 28;
     doc.setFont("helvetica", "bold");
@@ -156,6 +169,29 @@ export async function generateQuotePdf(data: QuoteData): Promise<jsPDF> {
     doc.setTextColor(100, 100, 120);
     const splitNotes = doc.splitTextToSize(data.notes, pageWidth - 40);
     doc.text(splitNotes, 20, notesY + 6);
+    footerAnchorY = notesY + 6 + splitNotes.length * 3.5 + 6;
+  }
+
+  if (data.auditMeta) {
+    const metaY = Math.max(footerAnchorY, finalY + 28);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(40, 40, 60);
+    doc.text("Audit Metadata", 20, metaY);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 120);
+    const metaLines = [
+      `Schema: ${data.auditMeta.schemaVersion} | Rules: ${data.auditMeta.rulesVersion}`,
+      `Generated: ${data.auditMeta.generatedAt} by ${data.auditMeta.generatedBy}`,
+      `Confidence: ${data.auditMeta.confidence}% | Gate: ${data.auditMeta.gateStatus}`,
+      `Gate reasons: ${data.auditMeta.gateReasons.length > 0 ? data.auditMeta.gateReasons.join("; ") : "none"}`,
+      `Assumptions: ${data.auditMeta.assumptions.length > 0 ? data.auditMeta.assumptions.join("; ") : "none"}`,
+    ];
+
+    const wrappedMeta = doc.splitTextToSize(metaLines.join("\n"), pageWidth - 40);
+    doc.text(wrappedMeta, 20, metaY + 5);
   }
 
   const pageHeight = doc.internal.pageSize.getHeight();
