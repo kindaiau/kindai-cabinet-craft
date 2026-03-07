@@ -6,6 +6,7 @@ interface ConfidenceInput {
   businessAbn: string;
   clientEmail: string;
   projectName: string;
+  tradeCode: string;
 }
 
 export interface ConfidenceResult {
@@ -68,7 +69,7 @@ export function evaluateConfidenceAndAssumptions(input: ConfidenceInput): Confid
     const source: "assumed" | "extracted" = reasons.length > 0 || lineAssumptions.length > 0 ? "assumed" : "extracted";
 
     return {
-      trade: "cabinetry",
+      trade: input.tradeCode,
       itemCode: `LI-${index + 1}`,
       description: line.description,
       qty: line.quantity,

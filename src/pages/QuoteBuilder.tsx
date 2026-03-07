@@ -15,6 +15,7 @@ import {
   type EstimateOutputContract,
 } from "@/lib/estimate-contract";
 import { evaluateConfidenceAndAssumptions } from "@/lib/confidence-assumptions-engine";
+import { ACTIVE_COMPLIANCE_PROFILE } from "@/lib/compliance-profile";
 import LabourConfigPanel from "@/components/quotes/LabourConfigPanel";
 import ProjectSelector from "@/components/quotes/ProjectSelector";
 import {
@@ -76,6 +77,7 @@ export default function QuoteBuilder() {
 
   const [labourConfig, setLabourConfig] = useState<LabourConfig>(DEFAULT_LABOUR_CONFIG);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [standardsReviewed, setStandardsReviewed] = useState(false);
 
   // Load saved labour defaults from profile on mount
   useEffect(() => {
@@ -165,6 +167,7 @@ export default function QuoteBuilder() {
     businessAbn: quote.businessAbn,
     clientEmail: quote.clientEmail,
     projectName: quote.projectName,
+    tradeCode: ACTIVE_COMPLIANCE_PROFILE.tradeCode,
   });
 
   const confidenceLevel: "high" | "medium" | "low" = confidenceResult.aggregateConfidence >= 90
@@ -176,7 +179,15 @@ export default function QuoteBuilder() {
   const complianceAssumptions = [
     ...confidenceResult.assumptions,
     ...confidenceResult.normalizedLines.flatMap((line) => line.assumptions),
+    `Compliance profile: ${ACTIVE_COMPLIANCE_PROFILE.standards.join(", ")}`,
   ];
+
+  const complianceBlockers = [...confidenceResult.blockers];
+  if (!standardsReviewed) {
+    complianceBlockers.push(
+      `Compliance review acknowledgement required (${ACTIVE_COMPLIANCE_PROFILE.standards.join(", ")}).`,
+    );
+  }
 
   const buildExportData = (): QuoteData => {
     // Append labour as line items for PDF
@@ -202,8 +213,10 @@ export default function QuoteBuilder() {
       }
     }
 
-    const gateReasons = confidenceResult.blockers;
-    const reviewStatus = confidenceResult.reviewStatus;
+    const gateReasons = complianceBlockers;
+    const reviewStatus = complianceBlockers.length > 0 || confidenceResult.aggregateConfidence < 80
+      ? "review_required"
+      : "order_ready";
 
     return {
       ...quote,
@@ -244,8 +257,8 @@ export default function QuoteBuilder() {
       },
       generatedAt,
       schemaVersion: ESTIMATE_SCHEMA_VERSION,
-      reviewStatus: confidenceResult.reviewStatus,
-      gateReasons: confidenceResult.blockers,
+      reviewStatus: complianceBlockers.length > 0 || confidenceResult.aggregateConfidence < 80 ? "review_required" : "order_ready",
+      gateReasons: complianceBlockers,
       assumptions: complianceAssumptions,
       aggregateConfidence: confidenceResult.aggregateConfidence,
       auditMeta: {
@@ -253,8 +266,8 @@ export default function QuoteBuilder() {
         schemaVersion: ESTIMATE_SCHEMA_VERSION,
         rulesVersion: ESTIMATE_RULES_VERSION,
         generatedBy: quote.businessName || "Kindai Operator",
-        gateStatus: confidenceResult.reviewStatus,
-        gateReasons: confidenceResult.blockers,
+        gateStatus: complianceBlockers.length > 0 || confidenceResult.aggregateConfidence < 80 ? "review_required" : "order_ready",
+        gateReasons: complianceBlockers,
       },
     };
   };
@@ -410,6 +423,28 @@ export default function QuoteBuilder() {
           />
         </div>
       )}
+
+      <Card className="mt-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="font-display text-base">Australian compliance review</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p className="text-muted-foreground">Trade: {ACTIVE_COMPLIANCE_PROFILE.tradeLabel}</p>
+          <ul className="list-disc pl-5 text-foreground/90">
+            {ACTIVE_COMPLIANCE_PROFILE.standards.map((standard) => (
+              <li key={standard}>{standard}</li>
+            ))}
+          </ul>
+          <label className="flex items-center gap-2 font-medium">
+            <input
+              type="checkbox"
+              checked={standardsReviewed}
+              onChange={(e) => setStandardsReviewed(e.target.checked)}
+            />
+            I confirm this estimate has been reviewed against the listed Australian standards.
+          </label>
+        </CardContent>
+      </Card>
 
       {/* Line Items */}
       <Card className="mt-6">
