@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Upload, Calculator, DollarSign, Zap, FileUp, Cpu, BarChart3, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import kindaiLogo from "@/assets/kindai-logo.webp";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 const kindaiColors = [
   "hsl(316, 100%, 64%)",  // pink
@@ -47,6 +48,11 @@ const features = [
 ];
 
 export default function Landing() {
+  usePageMeta({
+    title: "Kindai Cabinet Maker Estimator | AI Cabinet Quotes (AU)",
+    description: "AI-powered cabinetry estimating for Australian teams with Draft/Do-Not-Order controls.",
+  });
+
   return (
     <div className="min-h-screen bg-background scroll-smooth">
       {/* Header */}

@@ -18,4 +18,18 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-supabase": ["@supabase/supabase-js"],
+          "vendor-ui": ["framer-motion", "lucide-react", "sonner"],
+          "vendor-pdf": ["jspdf", "jspdf-autotable", "html2canvas"],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 800,
+  },
 }));
