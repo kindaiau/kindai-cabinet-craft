@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+      - name: Install deps
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Run available quality scripts
+        run: |
+          node -e "const s=require('./package.json').scripts||{}; const cp=require('child_process'); const run=(n)=>cp.execSync('npm run '+n,{stdio:'inherit'}); if(s.typecheck) run('typecheck'); if(s.lint) run('lint'); if(s.test) run('test'); if(s.build) run('build');"
